@@ -323,7 +323,21 @@
             if (selDaerah !== 'ALL') filtered = filtered.filter(row => row['DAERAH'] === selDaerah);
             if (selPert !== 'ALL') filtered = filtered.filter(row => row['PERTANDINGAN'] === selPert);
             
-            document.getElementById('stat-total-pendaftaran').innerText = filtered.length;
+            // Pengiraan baru: Kira setiap nama individu peserta yang sah
+            let totalPesertaSebenar = 0;
+            filtered.forEach(row => {
+                const p1 = row['NAMA PESERTA 1'];
+                const p2 = row['NAMA PESERTA 2'];
+                const p3 = row['NAMA PESERTA 3'];
+                
+                if (p1 && p1.trim() !== '' && p1.trim() !== '-') totalPesertaSebenar++;
+                if (p2 && p2.trim() !== '' && p2.trim() !== '-') totalPesertaSebenar++;
+                if (p3 && p3.trim() !== '' && p3.trim() !== '-') totalPesertaSebenar++;
+            });
+            
+            // Kemaskini jumlah di paparan UI
+            document.getElementById('stat-total-pendaftaran').innerText = totalPesertaSebenar;
+            
             const sekolahSet = new Set(filtered.map(row => row['NAMA SEKOLAH']).filter(Boolean));
             document.getElementById('stat-total-sekolah').innerText = sekolahSet.size;
             const pertSet = new Set(filtered.map(row => row['PERTANDINGAN']).filter(Boolean));
