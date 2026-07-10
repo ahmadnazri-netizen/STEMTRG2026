@@ -1,0 +1,1046 @@
+<!DOCTYPE html>
+<html lang="ms">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard Karnival STEM Terengganu 2026</title>
+    
+    <!-- Fonts: Inter for data, Outfit for headings -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Outfit:wght@400;600;700;800&display=swap" rel="stylesheet">
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- FontAwesome for Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Chart.js DataLabels Plugin -->
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0"></script>
+
+    <!-- PapaParse for CSV -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        heading: ['Outfit', 'sans-serif'],
+                    },
+                    colors: {
+                        tech: {
+                            50: '#f0f9ff',
+                            100: '#e0f2fe',
+                            500: '#0ea5e9',
+                            600: '#0284c7',
+                            800: '#075985',
+                            900: '#0c4a6e',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: #f1f5f9; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+        
+        .glass-card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(226, 232, 240, 0.8);
+            box-shadow: 0 10px 25px -5px rgba(14, 165, 233, 0.1);
+        }
+        
+        .nav-active {
+            border-bottom: 3px solid #0ea5e9;
+            color: #0ea5e9;
+            font-weight: 600;
+        }
+
+        /* Hide elements by default */
+        .hidden-element { display: none !important; }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800 font-sans min-h-screen flex flex-col antialiased">
+
+    <!-- Header -->
+    <header class="bg-white border-b border-slate-200 sticky top-0 z-30 shadow-sm">
+        <div class="container mx-auto px-4 py-4 flex flex-col md:flex-row justify-between items-center gap-4">
+            <div class="flex items-center gap-3">
+                <div class="bg-gradient-to-tr from-tech-600 to-cyan-400 text-white p-2.5 rounded-xl shadow-lg shadow-cyan-200">
+                    <i class="fa-solid fa-microchip text-xl"></i>
+                </div>
+                <div>
+                    <h1 class="font-heading font-bold text-2xl text-tech-900 leading-tight">KARNIVAL STEM 2026</h1>
+                    <p class="text-xs font-medium text-slate-500 uppercase tracking-wider">Peringkat Negeri Terengganu</p>
+                </div>
+            </div>
+            
+            <div class="flex items-center gap-4">
+                <nav class="flex gap-6 text-sm">
+                    <button onclick="switchTab('dashboard')" id="btn-tab-dashboard" class="nav-active pb-1 hover:text-tech-600 transition-colors cursor-pointer flex items-center gap-2">
+                        <i class="fa-solid fa-chart-pie"></i> Analisa & Data
+                    </button>
+                    <button onclick="switchTab('winners')" id="btn-tab-winners" class="pb-1 text-slate-500 hover:text-tech-600 transition-colors cursor-pointer flex items-center gap-2">
+                        <i class="fa-solid fa-trophy"></i> Senarai Pemenang
+                    </button>
+                </nav>
+                <div class="h-6 w-px bg-slate-300"></div>
+                <button onclick="openAdminLogin()" id="btn-admin-login" class="text-sm font-medium bg-slate-100 hover:bg-slate-200 text-slate-700 px-4 py-2 rounded-lg transition-colors flex items-center gap-2">
+                    <i class="fa-solid fa-lock"></i> Mode Admin
+                </button>
+                <button onclick="logoutAdmin()" id="btn-admin-logout" class="hidden-element text-sm font-medium bg-red-50 hover:bg-red-100 text-red-600 px-4 py-2 rounded-lg transition-colors flex items-center gap-2">
+                    <i class="fa-solid fa-unlock"></i> Log Keluar Admin
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content Container -->
+    <main class="container mx-auto px-4 py-8 flex-grow">
+        
+        <!-- Loading State -->
+        <div id="loading-spinner" class="flex flex-col items-center justify-center py-20">
+            <i class="fa-solid fa-circle-notch fa-spin text-4xl text-tech-500 mb-4"></i>
+            <p class="text-slate-500 font-medium animate-pulse">Menghubungkan ke Google Sheets & Pangkalan Data...</p>
+        </div>
+
+        <!-- TAB 1: DASHBOARD ANALISA & DATA -->
+        <div id="view-dashboard" class="hidden-element space-y-6">
+            
+            <!-- Quick Stats -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div class="glass-card rounded-2xl p-5 flex items-center gap-4 border-l-4 border-l-tech-500">
+                    <div class="bg-tech-100 text-tech-600 p-4 rounded-xl text-2xl"><i class="fa-solid fa-users"></i></div>
+                    <div>
+                        <p class="text-sm text-slate-500 font-medium">Jumlah Peserta</p>
+                        <h3 id="stat-total-participants" class="font-heading font-bold text-3xl text-tech-900">0</h3>
+                    </div>
+                </div>
+                <div class="glass-card rounded-2xl p-5 flex items-center gap-4 border-l-4 border-l-indigo-500">
+                    <div class="bg-indigo-100 text-indigo-600 p-4 rounded-xl text-2xl"><i class="fa-solid fa-school"></i></div>
+                    <div>
+                        <p class="text-sm text-slate-500 font-medium">Jumlah Sekolah</p>
+                        <h3 id="stat-total-schools" class="font-heading font-bold text-3xl text-tech-900">0</h3>
+                    </div>
+                </div>
+                <div class="glass-card rounded-2xl p-5 flex items-center gap-4 border-l-4 border-l-emerald-500">
+                    <div class="bg-emerald-100 text-emerald-600 p-4 rounded-xl text-2xl"><i class="fa-solid fa-robot"></i></div>
+                    <div>
+                        <p class="text-sm text-slate-500 font-medium">Jumlah Pertandingan</p>
+                        <h3 id="stat-total-comps" class="font-heading font-bold text-3xl text-tech-900">0</h3>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Charts Section -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <div class="glass-card rounded-2xl p-5">
+                    <h3 class="font-heading font-semibold text-lg text-slate-800 mb-4">Jumlah Peserta Mengikut Pertandingan</h3>
+                    <div class="relative h-[300px] w-full">
+                        <canvas id="chart-participants-comp"></canvas>
+                    </div>
+                </div>
+                <div class="glass-card rounded-2xl p-5">
+                    <h3 class="font-heading font-semibold text-lg text-slate-800 mb-4">Perbandingan Peserta Mengikut Daerah</h3>
+                    <div class="relative h-[300px] w-full">
+                        <canvas id="chart-participants-district"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Data Table Section -->
+            <div class="glass-card rounded-2xl flex flex-col overflow-hidden">
+                <!-- Filters -->
+                <div class="p-5 border-b border-slate-200 bg-slate-50/50 flex flex-col md:flex-row gap-4 justify-between items-center">
+                    <h3 class="font-heading font-semibold text-lg text-slate-800 flex items-center gap-2">
+                        <i class="fa-solid fa-table-list text-tech-500"></i> Direktori Peserta
+                    </h3>
+                    <div class="flex flex-col md:flex-row gap-3 w-full md:w-auto">
+                        <div class="relative w-full md:w-48">
+                            <i class="fa-solid fa-filter absolute left-3 top-3 text-slate-400 text-sm"></i>
+                            <select id="filter-district" onchange="filterTable()" class="w-full pl-9 pr-4 py-2 bg-white border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-tech-500 focus:border-tech-500 outline-none appearance-none">
+                                <option value="ALL">Semua Daerah</option>
+                            </select>
+                        </div>
+                        <div class="relative w-full md:w-64">
+                            <i class="fa-solid fa-filter absolute left-3 top-3 text-slate-400 text-sm"></i>
+                            <select id="filter-comp" onchange="filterTable()" class="w-full pl-9 pr-4 py-2 bg-white border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-tech-500 focus:border-tech-500 outline-none appearance-none">
+                                <option value="ALL">Semua Pertandingan</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Table -->
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse whitespace-nowrap min-w-[1000px]">
+                        <thead>
+                            <tr class="bg-slate-100 text-slate-600 text-xs uppercase tracking-wider font-semibold">
+                                <th class="p-4 border-b border-slate-200">Pertandingan</th>
+                                <th class="p-4 border-b border-slate-200">Peringkat</th>
+                                <th class="p-4 border-b border-slate-200">Daerah</th>
+                                <th class="p-4 border-b border-slate-200">Nama Sekolah</th>
+                                <th class="p-4 border-b border-slate-200">Peserta</th>
+                                <th class="p-4 border-b border-slate-200">Guru Pengiring</th>
+                            </tr>
+                        </thead>
+                        <tbody id="table-body" class="text-sm divide-y divide-slate-100 bg-white">
+                            <!-- Rows will be injected here via JS -->
+                        </tbody>
+                    </table>
+                </div>
+                <div class="p-4 text-center text-sm text-slate-500 bg-slate-50 border-t border-slate-200" id="table-footer">
+                    Memuatkan data...
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB 2: SENARAI PEMENANG -->
+        <div id="view-winners" class="hidden-element space-y-6">
+            
+            <!-- Winner Stats -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <!-- District Wins Chart -->
+                <div class="glass-card rounded-2xl p-5">
+                    <h3 class="font-heading font-semibold text-lg text-slate-800 mb-4 flex items-center gap-2">
+                        <i class="fa-solid fa-map-location-dot text-amber-500"></i> Daerah Pemenang Tertinggi
+                    </h3>
+                    <div class="relative h-[250px] w-full">
+                        <canvas id="chart-winners-district"></canvas>
+                    </div>
+                </div>
+                
+                <!-- Top Rankings -->
+                <div class="grid grid-rows-2 gap-4">
+                    <div class="glass-card rounded-xl p-4 flex flex-col justify-center">
+                        <h4 class="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Daerah Terbaik (Johan Keseluruhan)</h4>
+                        <div class="flex items-center gap-3">
+                            <div class="bg-amber-100 text-amber-600 p-3 rounded-full text-xl"><i class="fa-solid fa-crown"></i></div>
+                            <div>
+                                <h3 id="top-district-name" class="font-heading font-bold text-2xl text-tech-900">-</h3>
+                                <p id="top-district-score" class="text-sm text-slate-500">0 Kemenangan</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="glass-card rounded-xl p-4 flex flex-col justify-center">
+                        <h4 class="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Sekolah Terbaik</h4>
+                        <div class="flex items-center gap-3">
+                            <div class="bg-purple-100 text-purple-600 p-3 rounded-full text-xl"><i class="fa-solid fa-medal"></i></div>
+                            <div class="overflow-hidden">
+                                <h3 id="top-school-name" class="font-heading font-bold text-xl text-tech-900 truncate" title="-">-</h3>
+                                <p id="top-school-score" class="text-sm text-slate-500">0 Kemenangan</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Competition Winners Grid -->
+            <div>
+                <h3 class="font-heading font-bold text-2xl text-slate-800 mb-6 mt-8 flex items-center gap-3">
+                    <i class="fa-solid fa-award text-tech-500"></i> Keputusan Rasmi Pertandingan
+                </h3>
+                
+                <div id="winners-grid" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+                    <!-- Winner Cards will be injected here -->
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- Custom Modal Background -->
+    <div id="modal-backdrop" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-40 hidden-element flex items-center justify-center p-4">
+        
+        <!-- Admin Login Modal -->
+        <div id="modal-login" class="bg-white rounded-2xl shadow-2xl max-w-sm w-full p-6 hidden-element transform transition-all">
+            <div class="text-center mb-6">
+                <div class="inline-flex items-center justify-center w-12 h-12 bg-tech-100 text-tech-600 rounded-full mb-4">
+                    <i class="fa-solid fa-shield-halved text-xl"></i>
+                </div>
+                <h3 class="font-heading font-bold text-xl text-slate-800">Log Masuk Admin</h3>
+                <p class="text-sm text-slate-500 mt-1">Masukkan kata laluan untuk mod edit.</p>
+            </div>
+            <div class="mb-4">
+                <input type="password" id="admin-password" placeholder="Kata Laluan" class="w-full px-4 py-3 rounded-xl border border-slate-300 focus:ring-2 focus:ring-tech-500 focus:border-tech-500 outline-none transition-all">
+                <p id="login-error" class="text-red-500 text-xs mt-2 hidden-element">Kata laluan salah.</p>
+            </div>
+            <div class="flex gap-3">
+                <button onclick="closeModals()" class="flex-1 py-2.5 px-4 bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium rounded-xl transition-colors">Batal</button>
+                <button onclick="verifyAdmin()" class="flex-1 py-2.5 px-4 bg-tech-600 hover:bg-tech-700 text-white font-medium rounded-xl transition-colors shadow-md shadow-tech-500/30">Log Masuk</button>
+            </div>
+        </div>
+
+        <!-- Edit Winners Modal -->
+        <div id="modal-edit-winners" class="bg-white rounded-2xl shadow-2xl max-w-lg w-full max-h-[90vh] flex flex-col hidden-element">
+            <div class="p-5 border-b border-slate-100 flex justify-between items-center">
+                <h3 class="font-heading font-bold text-xl text-slate-800 flex items-center gap-2">
+                    <i class="fa-solid fa-pen-to-square text-tech-500"></i> Kemaskini Pemenang
+                </h3>
+                <button onclick="closeModals()" class="text-slate-400 hover:text-slate-600">
+                    <i class="fa-solid fa-times text-xl"></i>
+                </button>
+            </div>
+            
+            <div class="p-5 overflow-y-auto flex-grow" id="edit-winners-form-container">
+                <p class="text-sm text-tech-600 font-medium mb-4 bg-tech-50 p-3 rounded-lg" id="edit-comp-name">Nama Pertandingan</p>
+                <input type="hidden" id="edit-comp-id">
+                
+                <div class="space-y-4">
+                    <!-- Forms for Rank 1 to 5 -->
+                    <div class="rank-input-group">
+                        <label class="block text-xs font-bold text-amber-500 uppercase tracking-wide mb-1">Tempat Pertama (Johan)</label>
+                        <select id="rank-1-select" class="w-full px-3 py-2 rounded-lg border border-slate-300 focus:ring-2 focus:ring-tech-500 outline-none text-sm"></select>
+                    </div>
+                    <div class="rank-input-group">
+                        <label class="block text-xs font-bold text-slate-400 uppercase tracking-wide mb-1">Tempat Kedua (Naib Johan)</label>
+                        <select id="rank-2-select" class="w-full px-3 py-2 rounded-lg border border-slate-300 focus:ring-2 focus:ring-tech-500 outline-none text-sm"></select>
+                    </div>
+                    <div class="rank-input-group">
+                        <label class="block text-xs font-bold text-amber-700 uppercase tracking-wide mb-1">Tempat Ketiga</label>
+                        <select id="rank-3-select" class="w-full px-3 py-2 rounded-lg border border-slate-300 focus:ring-2 focus:ring-tech-500 outline-none text-sm"></select>
+                    </div>
+                    <div class="rank-input-group">
+                        <label class="block text-xs font-bold text-slate-600 uppercase tracking-wide mb-1">Tempat Keempat</label>
+                        <select id="rank-4-select" class="w-full px-3 py-2 rounded-lg border border-slate-300 focus:ring-2 focus:ring-tech-500 outline-none text-sm"></select>
+                    </div>
+                    <div class="rank-input-group">
+                        <label class="block text-xs font-bold text-slate-600 uppercase tracking-wide mb-1">Tempat Kelima</label>
+                        <select id="rank-5-select" class="w-full px-3 py-2 rounded-lg border border-slate-300 focus:ring-2 focus:ring-tech-500 outline-none text-sm"></select>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="p-5 border-t border-slate-100 flex gap-3">
+                <button onclick="closeModals()" class="flex-1 py-2.5 px-4 bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium rounded-xl transition-colors">Batal</button>
+                <button onclick="saveWinners()" id="btn-save-winners" class="flex-1 py-2.5 px-4 bg-tech-600 hover:bg-tech-700 text-white font-medium rounded-xl transition-colors shadow-md shadow-tech-500/30 flex justify-center items-center gap-2">
+                    <i class="fa-solid fa-floppy-disk"></i> Simpan
+                </button>
+            </div>
+        </div>
+
+        <!-- Alert Modal (replaces window.alert) -->
+        <div id="modal-alert" class="bg-white rounded-2xl shadow-2xl max-w-sm w-full p-6 hidden-element text-center">
+            <div id="alert-icon" class="inline-flex items-center justify-center w-14 h-14 rounded-full mb-4 mx-auto text-2xl">
+                <!-- icon injected -->
+            </div>
+            <h3 id="alert-title" class="font-heading font-bold text-xl text-slate-800 mb-2">Notice</h3>
+            <p id="alert-message" class="text-sm text-slate-500 mb-6">Message goes here.</p>
+            <button onclick="closeModals()" class="w-full py-2.5 px-4 bg-slate-800 hover:bg-slate-900 text-white font-medium rounded-xl transition-colors">Tutup</button>
+        </div>
+    </div>
+
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, setDoc, getDocs, collection, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // Global State & Data
+        window.appState = {
+            isAdmin: false,
+            rawData: [],
+            competitions: [],
+            districts: [],
+            schoolsMap: {}, // To map school to district
+            winners: {}, // Format: { compId: { ranks: ["Sek A", "Sek B"...], updatedBy: "" } }
+            charts: {}
+        };
+
+        const GOOGLE_SHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/14_tDKXHRi1mQf5hQokoLWdExwG0Q7auiKya4I_8byO0/gviz/tq?tqx=out:csv";
+        const ADMIN_PASS = "StEm@2026";
+        
+        let db;
+        let auth;
+        let currentUser;
+        let appId = typeof __app_id !== 'undefined' ? __app_id : 'karnival-stem-2026';
+
+        async function initFirebase() {
+            try {
+                if (typeof __firebase_config !== 'undefined') {
+                    const firebaseConfig = JSON.parse(__firebase_config);
+                    const app = initializeApp(firebaseConfig);
+                    db = getFirestore(app);
+                    auth = getAuth(app);
+
+                    if (typeof __initial_auth_token !== 'undefined') {
+                        await signInWithCustomToken(auth, __initial_auth_token);
+                    } else {
+                        await signInAnonymously(auth);
+                    }
+                    currentUser = auth.currentUser;
+                    
+                    // Setup real-time listener for winners
+                    setupWinnersListener();
+                } else {
+                    console.warn("Firebase config not found. Running in offline/preview mode.");
+                    // Provide empty db logic to not break app
+                    appState.winners = {};
+                }
+            } catch (error) {
+                console.error("Firebase init error:", error);
+            }
+        }
+
+        function setupWinnersListener() {
+            if (!currentUser || !db) return;
+            const winnersRef = collection(db, 'artifacts', appId, 'public', 'data', 'winners');
+            
+            onSnapshot(winnersRef, (snapshot) => {
+                appState.winners = {};
+                snapshot.forEach(doc => {
+                    appState.winners[doc.id] = doc.data();
+                });
+                
+                // Only update UI if we are on the winners tab and data is loaded
+                if(appState.rawData.length > 0) {
+                    renderWinnersGrid();
+                    updateWinnersAnalytics();
+                }
+            }, (error) => {
+                console.error("Error listening to winners:", error);
+            });
+        }
+
+        // Expose Firebase save function to global scope
+        window.saveWinnersToDB = async (compId, ranks) => {
+            if (!currentUser || !db) {
+                showAlert("Ralat", "Pangkalan data tidak bersambung. Mod pratonton?", "error");
+                return;
+            }
+            try {
+                const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'winners', compId);
+                await setDoc(docRef, { ranks: ranks, timestamp: new Date().toISOString() });
+                showAlert("Berjaya", "Senarai pemenang telah dikemaskini.", "success");
+                closeModals();
+            } catch (error) {
+                console.error("Error saving winner:", error);
+                showAlert("Ralat", "Gagal menyimpan data.", "error");
+            }
+        };
+
+        async function fetchSheetData() {
+            return new Promise((resolve, reject) => {
+                Papa.parse(GOOGLE_SHEET_CSV_URL, {
+                    download: true,
+                    header: true,
+                    skipEmptyLines: true,
+                    complete: function(results) {
+                        // Normalize headers
+                        const normalizedData = results.data.map(row => {
+                            const newRow = {};
+                            for (let key in row) {
+                                newRow[key.trim().toUpperCase()] = row[key].trim();
+                            }
+                            return newRow;
+                        });
+                        resolve(normalizedData);
+                    },
+                    error: function(err) {
+                        reject(err);
+                    }
+                });
+            });
+        }
+
+        function countParticipantsInRow(row) {
+            let count = 0;
+            if (row['NAMA PESERTA 1'] && row['NAMA PESERTA 1'] !== '' && row['NAMA PESERTA 1'] !== '-') count++;
+            if (row['NAMA PESERTA 2'] && row['NAMA PESERTA 2'] !== '' && row['NAMA PESERTA 2'] !== '-') count++;
+            if (row['NAMA PESERTA 3'] && row['NAMA PESERTA 3'] !== '' && row['NAMA PESERTA 3'] !== '-') count++;
+            return count; // fallback if names aren't provided but row exists, at least 1 person represented the school? 
+            // We will stick to strict counting based on columns. If all empty but row exists, maybe it's 1.
+        }
+
+        function processData(data) {
+            // Clean out invalid rows (must have Pertandingan)
+            const validData = data.filter(row => row['PERTANDINGAN'] && row['PERTANDINGAN'].length > 0);
+            appState.rawData = validData;
+
+            const compSet = new Set();
+            const districtSet = new Set();
+            
+            validData.forEach(row => {
+                compSet.add(row['PERTANDINGAN']);
+                if(row['DAERAH']) districtSet.add(row['DAERAH']);
+                
+                // Map school to district for winner analysis
+                if(row['NAMA SEKOLAH'] && row['DAERAH']) {
+                    appState.schoolsMap[row['NAMA SEKOLAH']] = row['DAERAH'];
+                }
+            });
+
+            appState.competitions = Array.from(compSet).sort();
+            appState.districts = Array.from(districtSet).sort();
+            
+            populateFilters();
+            updateDashboardStats();
+            initCharts();
+            renderTable();
+            renderWinnersGrid(); // Pre-render winners area
+            
+            // Hide loading, show dashboard
+            document.getElementById('loading-spinner').classList.add('hidden-element');
+            document.getElementById('view-dashboard').classList.remove('hidden-element');
+        }
+
+        // Initialize App Main Entry Point
+        async function initApp() {
+            try {
+                await initFirebase();
+                const data = await fetchSheetData();
+                processData(data);
+            } catch (error) {
+                console.error("Initialization failed:", error);
+                document.getElementById('loading-spinner').innerHTML = `
+                    <div class="text-red-500 text-center">
+                        <i class="fa-solid fa-triangle-exclamation text-4xl mb-4"></i>
+                        <p class="font-bold">Gagal memuat turun data.</p>
+                        <p class="text-sm">Sila pastikan pautan Google Sheet boleh diakses (Anyone with the link).</p>
+                    </div>
+                `;
+            }
+        }
+
+        // Run after DOM is fully ready
+        window.addEventListener('DOMContentLoaded', initApp);
+    </script>
+
+    <script>
+        // --- UI & TAB MANAGEMENT ---
+        
+        // Register ChartDataLabels plugin globally
+        Chart.register(ChartDataLabels);
+
+        function switchTab(tabId) {
+            // Update nav styling
+            document.getElementById('btn-tab-dashboard').classList.remove('nav-active', 'text-slate-500');
+            document.getElementById('btn-tab-winners').classList.remove('nav-active', 'text-slate-500');
+            
+            if (tabId === 'dashboard') {
+                document.getElementById('btn-tab-dashboard').classList.add('nav-active');
+                document.getElementById('btn-tab-winners').classList.add('text-slate-500');
+                
+                document.getElementById('view-dashboard').classList.remove('hidden-element');
+                document.getElementById('view-winners').classList.add('hidden-element');
+            } else {
+                document.getElementById('btn-tab-winners').classList.add('nav-active');
+                document.getElementById('btn-tab-dashboard').classList.add('text-slate-500');
+                
+                document.getElementById('view-winners').classList.remove('hidden-element');
+                document.getElementById('view-dashboard').classList.add('hidden-element');
+                updateWinnersAnalytics(); // Refresh charts in winners tab when opened
+            }
+        }
+
+        // --- DASHBOARD DATA RENDERING ---
+        function populateFilters() {
+            const districtFilter = document.getElementById('filter-district');
+            const compFilter = document.getElementById('filter-comp');
+
+            window.appState.districts.forEach(d => {
+                const opt = document.createElement('option');
+                opt.value = d; opt.textContent = d;
+                districtFilter.appendChild(opt);
+            });
+
+            window.appState.competitions.forEach(c => {
+                const opt = document.createElement('option');
+                opt.value = c; opt.textContent = c;
+                compFilter.appendChild(opt);
+            });
+        }
+
+        function updateDashboardStats() {
+            const data = window.appState.rawData;
+            let totalParticipants = 0;
+            const schools = new Set();
+            
+            data.forEach(row => {
+                schools.add(row['NAMA SEKOLAH']);
+                // Count participants (column logic)
+                let c = 0;
+                if (row['NAMA PESERTA 1']) c++;
+                if (row['NAMA PESERTA 2']) c++;
+                if (row['NAMA PESERTA 3']) c++;
+                totalParticipants += (c === 0 ? 1 : c); // if no names, assume 1 representation
+            });
+
+            document.getElementById('stat-total-participants').textContent = totalParticipants;
+            document.getElementById('stat-total-schools').textContent = schools.size;
+            document.getElementById('stat-total-comps').textContent = window.appState.competitions.length;
+        }
+
+        function getParticipantCount(row) {
+            let c = 0;
+            if (row['NAMA PESERTA 1']) c++;
+            if (row['NAMA PESERTA 2']) c++;
+            if (row['NAMA PESERTA 3']) c++;
+            return c === 0 ? 1 : c;
+        }
+
+        function initCharts() {
+            const data = window.appState.rawData;
+            
+            // Prepare Data for Comp Chart
+            const compDataMap = {};
+            // Prepare Data for District Chart
+            const distDataMap = {};
+
+            data.forEach(row => {
+                const comp = row['PERTANDINGAN'] || 'Lain-lain';
+                const dist = row['DAERAH'] || 'Tidak Dinyatakan';
+                const count = getParticipantCount(row);
+
+                compDataMap[comp] = (compDataMap[comp] || 0) + count;
+                distDataMap[dist] = (distDataMap[dist] || 0) + count;
+            });
+
+            // CHART 1: Participants by Competition
+            const ctxComp = document.getElementById('chart-participants-comp').getContext('2d');
+            window.appState.charts.comp = new Chart(ctxComp, {
+                type: 'bar',
+                data: {
+                    labels: Object.keys(compDataMap).map(l => l.length > 25 ? l.substring(0, 25) + '...' : l), // truncate long labels
+                    datasets: [{
+                        label: 'Jumlah Peserta',
+                        data: Object.values(compDataMap),
+                        backgroundColor: 'rgba(14, 165, 233, 0.7)',
+                        borderColor: 'rgb(14, 165, 233)',
+                        borderWidth: 1,
+                        borderRadius: 4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    layout: { padding: { top: 25 } },
+                    plugins: { 
+                        legend: { display: false }, 
+                        tooltip: {
+                            callbacks: { title: (ctx) => Object.keys(compDataMap)[ctx[0].dataIndex] } // show full name on hover
+                        },
+                        datalabels: {
+                            anchor: 'end',
+                            align: 'top',
+                            color: '#0ea5e9',
+                            font: { weight: 'bold', size: 11, family: 'Inter' }
+                        }
+                    },
+                    scales: { y: { beginAtZero: true, ticks: { precision: 0 } } }
+                }
+            });
+
+            // CHART 2: Participants by District
+            const ctxDist = document.getElementById('chart-participants-district').getContext('2d');
+            window.appState.charts.dist = new Chart(ctxDist, {
+                type: 'doughnut',
+                data: {
+                    labels: Object.keys(distDataMap),
+                    datasets: [{
+                        data: Object.values(distDataMap),
+                        backgroundColor: [
+                            '#0ea5e9', '#3b82f6', '#8b5cf6', '#ec4899', '#f43f5e', 
+                            '#f97316', '#eab308', '#22c55e', '#14b8a6', '#64748b'
+                        ],
+                        borderWidth: 2,
+                        borderColor: '#ffffff'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { position: 'right', labels: { boxWidth: 12, font: { size: 11, family: 'Inter' } } },
+                        datalabels: {
+                            color: '#ffffff',
+                            font: { weight: 'bold', size: 12, family: 'Inter' },
+                            formatter: (value) => value > 0 ? value : ''
+                        }
+                    },
+                    cutout: '65%'
+                }
+            });
+        }
+
+        window.filterTable = function() {
+            renderTable();
+        };
+
+        function renderTable() {
+            const districtFilter = document.getElementById('filter-district').value;
+            const compFilter = document.getElementById('filter-comp').value;
+            const tbody = document.getElementById('table-body');
+            const footer = document.getElementById('table-footer');
+            
+            tbody.innerHTML = '';
+            
+            const filteredData = window.appState.rawData.filter(row => {
+                const matchDist = districtFilter === 'ALL' || row['DAERAH'] === districtFilter;
+                const matchComp = compFilter === 'ALL' || row['PERTANDINGAN'] === compFilter;
+                return matchDist && matchComp;
+            });
+
+            if (filteredData.length === 0) {
+                footer.textContent = 'Tiada rekod dijumpai.';
+                footer.classList.remove('hidden-element');
+                return;
+            }
+
+            footer.classList.add('hidden-element');
+
+            filteredData.forEach(row => {
+                // Compile participants
+                let pList = [];
+                if (row['NAMA PESERTA 1']) pList.push(`<div class="truncate max-w-[200px] text-tech-700" title="${row['NAMA PESERTA 1']}">1. ${row['NAMA PESERTA 1']}</div>`);
+                if (row['NAMA PESERTA 2']) pList.push(`<div class="truncate max-w-[200px] text-tech-700" title="${row['NAMA PESERTA 2']}">2. ${row['NAMA PESERTA 2']}</div>`);
+                if (row['NAMA PESERTA 3']) pList.push(`<div class="truncate max-w-[200px] text-tech-700" title="${row['NAMA PESERTA 3']}">3. ${row['NAMA PESERTA 3']}</div>`);
+                let pStr = pList.length > 0 ? pList.join('') : '<span class="text-slate-400 italic">Tiada Rekod</span>';
+
+                const tr = document.createElement('tr');
+                tr.className = 'hover:bg-slate-50 transition-colors';
+                tr.innerHTML = `
+                    <td class="p-4 border-b border-slate-100"><div class="font-medium text-slate-800 whitespace-normal min-w-[200px]">${row['PERTANDINGAN'] || '-'}</div></td>
+                    <td class="p-4 border-b border-slate-100">${row['PERINGKAT'] || '-'}</td>
+                    <td class="p-4 border-b border-slate-100"><span class="px-2 py-1 bg-slate-100 text-slate-600 rounded text-xs font-semibold">${row['DAERAH'] || '-'}</span></td>
+                    <td class="p-4 border-b border-slate-100 font-medium text-slate-700 whitespace-normal min-w-[200px]">${row['NAMA SEKOLAH'] || '-'}</td>
+                    <td class="p-4 border-b border-slate-100 text-xs">${pStr}</td>
+                    <td class="p-4 border-b border-slate-100 text-sm whitespace-normal min-w-[150px]">${row['GURU PENGIRING'] || '-'}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function getSafeId(str) {
+            return str.replace(/[^a-zA-Z0-9]/g, '_').toLowerCase();
+        }
+
+        function renderWinnersGrid() {
+            const grid = document.getElementById('winners-grid');
+            grid.innerHTML = '';
+            
+            const comps = window.appState.competitions;
+            const isAdmin = window.appState.isAdmin;
+            const winnersData = window.appState.winners;
+
+            comps.forEach(comp => {
+                const compId = getSafeId(comp);
+                const ranks = (winnersData[compId] && winnersData[compId].ranks) || ["", "", "", "", ""];
+                
+                const card = document.createElement('div');
+                card.className = 'glass-card rounded-2xl p-5 flex flex-col relative overflow-hidden group';
+                
+                // Admin Edit Button Overlay
+                let editBtnHtml = '';
+                if (isAdmin) {
+                    editBtnHtml = `
+                        <button onclick="openEditWinners('${comp}')" class="absolute top-4 right-4 w-8 h-8 bg-white shadow-md text-tech-600 rounded-full flex items-center justify-center hover:bg-tech-50 transition-colors z-10 border border-slate-200">
+                            <i class="fa-solid fa-pen text-sm"></i>
+                        </button>
+                    `;
+                }
+
+                const rankLabels = [
+                    { label: 'Johan', color: 'text-amber-500', bg: 'bg-amber-100', icon: 'fa-trophy' },
+                    { label: 'Naib Johan', color: 'text-slate-400', bg: 'bg-slate-100', icon: 'fa-medal' },
+                    { label: 'Ketiga', color: 'text-amber-700', bg: 'bg-amber-50', icon: 'fa-medal' },
+                    { label: 'Keempat', color: 'text-slate-500', bg: 'bg-transparent', icon: 'fa-award' },
+                    { label: 'Kelima', color: 'text-slate-500', bg: 'bg-transparent', icon: 'fa-award' }
+                ];
+
+                let listHtml = '<div class="mt-4 space-y-3 flex-grow">';
+                
+                ranks.forEach((school, index) => {
+                    if(school && school !== "") {
+                        const style = rankLabels[index];
+                        const district = window.appState.schoolsMap[school] || '';
+                        listHtml += `
+                            <div class="flex items-start gap-3 p-2 rounded-lg ${style.bg} border border-transparent hover:border-slate-200 transition-colors">
+                                <div class="${style.color} mt-0.5 w-5 text-center flex-shrink-0"><i class="fa-solid ${style.icon}"></i></div>
+                                <div>
+                                    <p class="text-xs font-bold ${style.color} uppercase tracking-wider leading-none mb-1">${style.label}</p>
+                                    <p class="font-medium text-sm text-slate-800 leading-tight">${school}</p>
+                                    ${district ? `<p class="text-[10px] text-slate-500 mt-0.5"><i class="fa-solid fa-map-pin mr-1"></i>${district}</p>` : ''}
+                                </div>
+                            </div>
+                        `;
+                    }
+                });
+                
+                // Check if all empty
+                if(ranks.every(r => !r || r === "")) {
+                    listHtml += `<div class="flex flex-col items-center justify-center h-full text-slate-400 text-sm py-6">
+                        <i class="fa-regular fa-clock text-3xl mb-2 opacity-50"></i>
+                        <p>Keputusan belum diumumkan</p>
+                    </div>`;
+                }
+                
+                listHtml += '</div>';
+
+                card.innerHTML = `
+                    ${editBtnHtml}
+                    <h4 class="font-heading font-bold text-lg text-tech-900 pr-8 leading-snug border-b border-slate-100 pb-3">${comp}</h4>
+                    ${listHtml}
+                `;
+                
+                grid.appendChild(card);
+            });
+        }
+
+        // Calculate and render winners statistics
+        function updateWinnersAnalytics() {
+            const winnersData = window.appState.winners;
+            const schoolsMap = window.appState.schoolsMap;
+            
+            const districtScores = {};
+            const schoolScores = {};
+            
+            // Loop through all competitions and their winners
+            Object.values(winnersData).forEach(data => {
+                if (data.ranks) {
+                    data.ranks.forEach((schoolName, index) => {
+                        if (schoolName && schoolName !== "") {
+                            // Weighting system: 1 point for any top 5 win based on prompt. 
+                            // (Can be adjusted to 5,4,3,2,1 if needed, but prompt says "paling banyak memenangi", implying count).
+                            const score = 1; 
+                            
+                            // School Score
+                            schoolScores[schoolName] = (schoolScores[schoolName] || 0) + score;
+                            
+                            // District Score
+                            const dist = schoolsMap[schoolName] || 'Lain-lain';
+                            districtScores[dist] = (districtScores[dist] || 0) + score;
+                        }
+                    });
+                }
+            });
+
+            // Find Top District
+            let topDist = "-", topDistScore = 0;
+            for(let [dist, score] of Object.entries(districtScores)) {
+                if(score > topDistScore && dist !== 'Lain-lain') {
+                    topDistScore = score;
+                    topDist = dist;
+                }
+            }
+
+            // Find Top School
+            let topSchool = "-", topSchoolScore = 0;
+            for(let [sch, score] of Object.entries(schoolScores)) {
+                if(score > topSchoolScore) {
+                    topSchoolScore = score;
+                    topSchool = sch;
+                }
+            }
+
+            document.getElementById('top-district-name').textContent = topDist;
+            document.getElementById('top-district-score').textContent = `${topDistScore} Kemenangan`;
+            
+            document.getElementById('top-school-name').textContent = topSchool;
+            document.getElementById('top-school-name').title = topSchool;
+            document.getElementById('top-school-score').textContent = `${topSchoolScore} Kemenangan`;
+
+            // Update Winners District Chart
+            if(window.appState.charts.winnersDist) {
+                window.appState.charts.winnersDist.destroy();
+            }
+
+            const ctxWinDist = document.getElementById('chart-winners-district').getContext('2d');
+            
+            // Sort data for chart
+            const sortedDists = Object.keys(districtScores).sort((a,b) => districtScores[b] - districtScores[a]);
+            const distValues = sortedDists.map(d => districtScores[d]);
+
+            if(sortedDists.length === 0) {
+                 // Empty state
+                 window.appState.charts.winnersDist = new Chart(ctxWinDist, {
+                    type: 'bar', data: { labels: ['Tiada Data'], datasets: [{ data: [0] }] }, options: { responsive:true, maintainAspectRatio:false }
+                 });
+                 return;
+            }
+
+            window.appState.charts.winnersDist = new Chart(ctxWinDist, {
+                type: 'bar',
+                data: {
+                    labels: sortedDists,
+                    datasets: [{
+                        label: 'Kemenangan',
+                        data: distValues,
+                        backgroundColor: 'rgba(245, 158, 11, 0.8)',
+                        borderColor: 'rgb(245, 158, 11)',
+                        borderWidth: 1,
+                        borderRadius: 4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    indexAxis: 'y', // Horizontal bar for easier reading of district names
+                    layout: { padding: { right: 30 } },
+                    plugins: { 
+                        legend: { display: false },
+                        datalabels: {
+                            anchor: 'end',
+                            align: 'right',
+                            color: '#d97706',
+                            font: { weight: 'bold', size: 12, family: 'Inter' }
+                        }
+                    },
+                    scales: { x: { beginAtZero: true, ticks: { stepSize: 1 } } }
+                }
+            });
+        }
+
+        function getModalBg() { return document.getElementById('modal-backdrop'); }
+        
+        window.closeModals = function() {
+            getModalBg().classList.add('hidden-element');
+            document.getElementById('modal-login').classList.add('hidden-element');
+            document.getElementById('modal-edit-winners').classList.add('hidden-element');
+            document.getElementById('modal-alert').classList.add('hidden-element');
+            document.getElementById('admin-password').value = '';
+            document.getElementById('login-error').classList.add('hidden-element');
+        };
+
+        window.openAdminLogin = function() {
+            getModalBg().classList.remove('hidden-element');
+            document.getElementById('modal-login').classList.remove('hidden-element');
+            setTimeout(() => document.getElementById('admin-password').focus(), 100);
+        };
+
+        window.verifyAdmin = function() {
+            const pwd = document.getElementById('admin-password').value;
+            if (pwd === ADMIN_PASS) {
+                window.appState.isAdmin = true;
+                closeModals();
+                
+                // Update UI
+                document.getElementById('btn-admin-login').classList.add('hidden-element');
+                document.getElementById('btn-admin-logout').classList.remove('hidden-element');
+                
+                // Show success
+                showAlert('Akses Berjaya', 'Anda kini berada dalam Mod Admin.', 'success');
+                
+                // Re-render winners grid to show edit buttons
+                renderWinnersGrid();
+            } else {
+                document.getElementById('login-error').classList.remove('hidden-element');
+            }
+        };
+
+        window.logoutAdmin = function() {
+            window.appState.isAdmin = false;
+            document.getElementById('btn-admin-login').classList.remove('hidden-element');
+            document.getElementById('btn-admin-logout').classList.add('hidden-element');
+            renderWinnersGrid(); // Hide edit buttons
+            showAlert('Log Keluar', 'Anda telah log keluar dari Mod Admin.', 'info');
+        };
+
+        window.openEditWinners = function(compName) {
+            const compId = getSafeId(compName);
+            document.getElementById('edit-comp-name').textContent = compName;
+            document.getElementById('edit-comp-id').value = compId;
+
+            // Get participating schools for this competition
+            const compData = window.appState.rawData.filter(r => r['PERTANDINGAN'] === compName);
+            const schoolsSet = new Set();
+            compData.forEach(r => {
+                if(r['NAMA SEKOLAH']) schoolsSet.add(r['NAMA SEKOLAH']);
+            });
+            const participatingSchools = Array.from(schoolsSet).sort();
+
+            // Populate select dropdowns
+            const currentRanks = (window.appState.winners[compId] && window.appState.winners[compId].ranks) || ["", "", "", "", ""];
+            
+            for(let i=1; i<=5; i++) {
+                const select = document.getElementById(`rank-${i}-select`);
+                select.innerHTML = '<option value="">-- Pilih Sekolah --</option>';
+                
+                participatingSchools.forEach(sch => {
+                    const opt = document.createElement('option');
+                    opt.value = sch;
+                    opt.textContent = sch;
+                    if(sch === currentRanks[i-1]) opt.selected = true;
+                    select.appendChild(opt);
+                });
+            }
+
+            getModalBg().classList.remove('hidden-element');
+            document.getElementById('modal-edit-winners').classList.remove('hidden-element');
+        };
+
+        window.saveWinners = function() {
+            const compId = document.getElementById('edit-comp-id').value;
+            const ranks = [
+                document.getElementById('rank-1-select').value,
+                document.getElementById('rank-2-select').value,
+                document.getElementById('rank-3-select').value,
+                document.getElementById('rank-4-select').value,
+                document.getElementById('rank-5-select').value
+            ];
+            
+            // Save to DB (which triggers listener to update UI)
+            // If offline, just update local state
+            if (window.saveWinnersToDB) {
+                // Disable button to prevent double click
+                const btn = document.getElementById('btn-save-winners');
+                const origHtml = btn.innerHTML;
+                btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Menyimpan...';
+                btn.disabled = true;
+                
+                window.saveWinnersToDB(compId, ranks).finally(() => {
+                    btn.innerHTML = origHtml;
+                    btn.disabled = false;
+                });
+            } else {
+                window.appState.winners[compId] = { ranks: ranks };
+                renderWinnersGrid();
+                updateWinnersAnalytics();
+                closeModals();
+            }
+        };
+
+        window.showAlert = function(title, msg, type='info') {
+            getModalBg().classList.remove('hidden-element');
+            // Hide others
+            document.getElementById('modal-login').classList.add('hidden-element');
+            document.getElementById('modal-edit-winners').classList.add('hidden-element');
+            
+            const alertModal = document.getElementById('modal-alert');
+            alertModal.classList.remove('hidden-element');
+            
+            document.getElementById('alert-title').textContent = title;
+            document.getElementById('alert-message').textContent = msg;
+            
+            const iconDiv = document.getElementById('alert-icon');
+            if (type === 'success') {
+                iconDiv.className = 'inline-flex items-center justify-center w-14 h-14 rounded-full mb-4 mx-auto text-2xl bg-emerald-100 text-emerald-600';
+                iconDiv.innerHTML = '<i class="fa-solid fa-check"></i>';
+            } else if (type === 'error') {
+                iconDiv.className = 'inline-flex items-center justify-center w-14 h-14 rounded-full mb-4 mx-auto text-2xl bg-red-100 text-red-600';
+                iconDiv.innerHTML = '<i class="fa-solid fa-xmark"></i>';
+            } else {
+                iconDiv.className = 'inline-flex items-center justify-center w-14 h-14 rounded-full mb-4 mx-auto text-2xl bg-blue-100 text-blue-600';
+                iconDiv.innerHTML = '<i class="fa-solid fa-info"></i>';
+            }
+        };
+
+        // Enter key in password field
+        document.getElementById('admin-password').addEventListener('keypress', function (e) {
+            if (e.key === 'Enter') {
+                window.verifyAdmin();
+            }
+        });
+    </script>
+</body>
+</html>
