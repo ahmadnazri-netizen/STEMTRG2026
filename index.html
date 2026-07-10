@@ -200,11 +200,11 @@
                     <table class="w-full text-left text-sm text-slate-600">
                         <thead class="text-xs text-slate-500 uppercase bg-slate-50 border-b border-slate-100">
                             <tr>
-                                <th scope="col" class="px-6 py-4 font-semibold">Pertandingan</th>
-                                <th scope="col" class="px-6 py-4 font-semibold">Daerah</th>
-                                <th scope="col" class="px-6 py-4 font-semibold">Sekolah</th>
-                                <th scope="col" class="px-6 py-4 font-semibold">Peserta</th>
-                                <th scope="col" class="px-6 py-4 font-semibold">Guru Pengiring</th>
+                                <th scope="col" class="px-6 py-4 font-semibold min-w-[200px]">Pertandingan</th>
+                                <th scope="col" class="px-6 py-4 font-semibold min-w-[120px]">Daerah</th>
+                                <th scope="col" class="px-6 py-4 font-semibold min-w-[250px]">Sekolah</th>
+                                <th scope="col" class="px-6 py-4 font-semibold min-w-[250px]">Peserta</th>
+                                <th scope="col" class="px-6 py-4 font-semibold min-w-[200px]">Guru Pengiring</th>
                             </tr>
                         </thead>
                         <tbody id="table-body" class="divide-y divide-slate-100">
@@ -490,24 +490,54 @@
             document.getElementById('table-count').innerText = data.length;
 
             data.forEach(row => {
-                // Handle participant names
+                // Handle participant names dalam bentuk petak/badge dan tanpa nombor
                 let pList = [];
-                if (row['NAMA PESERTA 1']) pList.push(`<div class="truncate max-w-[200px]" title="${row['NAMA PESERTA 1']}">1. ${row['NAMA PESERTA 1']}</div>`);
-                if (row['NAMA PESERTA 2']) pList.push(`<div class="truncate max-w-[200px]" title="${row['NAMA PESERTA 2']}">2. ${row['NAMA PESERTA 2']}</div>`);
-                if (row['NAMA PESERTA 3']) pList.push(`<div class="truncate max-w-[200px]" title="${row['NAMA PESERTA 3']}">3. ${row['NAMA PESERTA 3']}</div>`);
-                let pStr = pList.length > 0 ? pList.join('') : '<span class="text-slate-400 italic">Tiada Rekod</span>';
+                const badgeStyle = "inline-block px-2.5 py-1.5 bg-tech-50 text-tech-700 rounded-md text-xs font-semibold whitespace-normal border border-tech-100";
+                
+                const p1 = row['NAMA PESERTA 1'];
+                const p2 = row['NAMA PESERTA 2'];
+                const p3 = row['NAMA PESERTA 3'];
+                
+                // Semak jika nama wujud, tidak kosong, dan bukan hanya simbol "-"
+                if (p1 && p1.trim() !== '' && p1.trim() !== '-') pList.push(`<div class="${badgeStyle}">${p1.trim()}</div>`);
+                if (p2 && p2.trim() !== '' && p2.trim() !== '-') pList.push(`<div class="${badgeStyle}">${p2.trim()}</div>`);
+                if (p3 && p3.trim() !== '' && p3.trim() !== '-') pList.push(`<div class="${badgeStyle}">${p3.trim()}</div>`);
+                
+                let pStr = pList.length > 0 ? `<div class="flex flex-col gap-2 items-start">${pList.join('')}</div>` : '<span class="text-slate-400 italic">Tiada Rekod</span>';
 
-                // Handle Teacher variation headers safely
-                const guru = row['GURU PENGIRING'] || row['NAMA GURU PENGIRING'] || row['NAMA GURU'] || '-';
+                // Handle Teacher variation headers safely dan buang jika hanya simbol -
+                let guru = row['GURU PENGIRING'] || row['NAMA GURU PENGIRING'] || row['NAMA GURU'] || '';
+                let guruStr = '';
+                if (guru && guru.trim() !== '' && guru.trim() !== '-') {
+                    guruStr = `<div class="whitespace-normal leading-relaxed flex items-start"><i class="fa-solid fa-chalkboard-user text-slate-400 mr-2 mt-1 text-xs"></i><span>${guru.trim()}</span></div>`;
+                } else {
+                    guruStr = '<span class="text-slate-400 italic">Tiada Rekod</span>';
+                }
+
+                // Bersihkan NAMA PERTANDINGAN dari sebarang simbol (hanya tinggalkan huruf, nombor dan jarak)
+                const namaPertandingan = (row['PERTANDINGAN'] || '').replace(/[^a-zA-Z0-9\s]/g, '').trim();
 
                 const tr = document.createElement('tr');
                 tr.className = 'hover:bg-slate-50/80 transition-colors';
+                
+                // Guna align-top dan whitespace-normal untuk memastikan tulisan wrap dan tidak terpotong
                 tr.innerHTML = `
-                    <td class="px-6 py-4 border-b border-slate-100 font-medium text-slate-800">${row['PERTANDINGAN'] || '-'} <br><span class="text-[10px] text-slate-400 font-normal uppercase tracking-wider">${row['PERINGKAT'] || ''}</span></td>
-                    <td class="px-6 py-4 border-b border-slate-100"><span class="px-2.5 py-1 bg-tech-50 text-tech-700 rounded-md text-xs font-semibold whitespace-nowrap">${row['DAERAH'] || '-'}</span></td>
-                    <td class="px-6 py-4 border-b border-slate-100 font-medium text-slate-700 max-w-[250px] truncate" title="${row['NAMA SEKOLAH']}">${row['NAMA SEKOLAH'] || '-'}</td>
-                    <td class="px-6 py-4 border-b border-slate-100 text-xs text-slate-600">${pStr}</td>
-                    <td class="px-6 py-4 border-b border-slate-100 text-sm text-slate-700">${guru}</td>
+                    <td class="px-6 py-4 border-b border-slate-100 font-medium text-slate-800 align-top">
+                        <div class="mb-1.5 whitespace-normal leading-snug">${namaPertandingan}</div>
+                        <span class="px-2 py-0.5 bg-slate-100 text-slate-500 rounded text-[10px] font-bold uppercase tracking-wider">${row['PERINGKAT'] || ''}</span>
+                    </td>
+                    <td class="px-6 py-4 border-b border-slate-100 align-top">
+                        <span class="px-2.5 py-1 bg-tech-50 text-tech-700 rounded-md text-xs font-semibold whitespace-nowrap">${row['DAERAH'] || ''}</span>
+                    </td>
+                    <td class="px-6 py-4 border-b border-slate-100 font-medium text-slate-700 align-top">
+                        <div class="whitespace-normal leading-relaxed text-sm">${row['NAMA SEKOLAH'] || ''}</div>
+                    </td>
+                    <td class="px-6 py-4 border-b border-slate-100 align-top">
+                        ${pStr}
+                    </td>
+                    <td class="px-6 py-4 border-b border-slate-100 text-sm text-slate-800 align-top font-medium">
+                        ${guruStr}
+                    </td>
                 `;
                 tbody.appendChild(tr);
             });
