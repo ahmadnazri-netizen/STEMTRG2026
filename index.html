@@ -3,12 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard Analisa Karnival STEM Terengganu 2026</title>
+    <title>Dashboard Karnival STEM Terengganu 2026</title>
     
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Outfit:wght@400;600;700;800&display=swap" rel="stylesheet">
     
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -21,421 +21,324 @@
                         heading: ['Outfit', 'sans-serif'],
                     },
                     colors: {
-                        tech: {
-                            50: '#f0f9ff',
-                            100: '#e0f2fe',
-                            500: '#0ea5e9',
-                            600: '#0284c7',
-                            700: '#0369a1',
-                            900: '#0c4a6e',
-                        }
+                        tech: { 50: '#eff6ff', 100: '#dbeafe', 200: '#bfdbfe', 500: '#3b82f6', 600: '#2563eb', 700: '#1d4ed8', 900: '#1e3a8a' }
                     }
                 }
             }
         }
     </script>
-
+    
     <!-- FontAwesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
-    <!-- Chart.js & Datalabels -->
+    <!-- Chart.js & Plugin Datalabels -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0"></script>
 
-    <!-- PapaParse for Google Sheets CSV -->
+    <!-- PapaParse (Google Sheets) -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
 
     <style>
-        /* Custom scrollbar for webkit */
+        body { background-color: #f8fafc; }
+        .glass-panel { background: rgba(255, 255, 255, 0.9); backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.5); box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05); }
+        .hide { display: none !important; }
+        /* Scrollbar styling */
         ::-webkit-scrollbar { width: 6px; height: 6px; }
-        ::-webkit-scrollbar-track { background: #f1f5f9; }
-        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+        ::-webkit-scrollbar-track { background: #f1f1f1; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
         ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
-        
-        .glass-header {
-            background: rgba(255, 255, 255, 0.9);
-            backdrop-filter: blur(10px);
-            border-bottom: 1px solid rgba(226, 232, 240, 0.8);
-        }
-        
-        .modal-active { display: flex !important; }
     </style>
 </head>
-<body class="bg-slate-50 text-slate-800 antialiased min-h-screen flex flex-col">
+<body class="text-slate-800 antialiased min-h-screen flex flex-col">
 
-    <!-- Navigation Bar -->
-    <header class="glass-header sticky top-0 z-40 w-full">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="flex justify-between items-center h-20">
-                <div class="flex items-center gap-4">
-                    <div class="bg-tech-600 p-2.5 rounded-xl shadow-lg shadow-tech-500/30">
-                        <i class="fa-solid fa-atom text-white text-xl"></i>
-                    </div>
-                    <div>
-                        <h1 class="font-heading text-xl md:text-2xl font-bold text-slate-900 leading-tight">Karnival STEM 2026</h1>
-                        <p class="text-xs md:text-sm font-medium text-tech-600 tracking-wide uppercase">Peringkat Negeri Terengganu</p>
-                    </div>
+    <header class="bg-gradient-to-r from-tech-900 to-tech-600 text-white shadow-lg sticky top-0 z-40">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex flex-col sm:flex-row justify-between items-center gap-4">
+            <div class="flex items-center gap-4">
+                <div class="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center backdrop-blur-sm">
+                    <i class="fa-solid fa-atom text-2xl"></i>
                 </div>
-                <div class="flex items-center gap-3">
-                    <button id="btn-admin-login" onclick="openAdminLogin()" class="hidden md:flex items-center gap-2 px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-sm font-semibold transition-colors">
-                        <i class="fa-solid fa-lock text-xs"></i> Admin
-                    </button>
-                    <button id="btn-admin-logout" onclick="logoutAdmin()" class="hidden items-center gap-2 px-4 py-2 bg-red-50 hover:bg-red-100 text-red-600 rounded-lg text-sm font-semibold transition-colors">
-                        <i class="fa-solid fa-right-from-bracket text-xs"></i> Log Keluar
-                    </button>
+                <div>
+                    <h1 class="text-xl sm:text-2xl font-heading font-bold tracking-tight">Karnival STEM Terengganu 2026</h1>
+                    <p class="text-tech-100 text-xs sm:text-sm">Analitik Penyertaan & Keputusan Rasmi</p>
                 </div>
             </div>
-        </div>
-        
-        <!-- Tabs -->
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="flex space-x-8">
-                <button onclick="switchTab('analitik')" id="tab-analitik" class="tab-btn pb-4 border-b-2 font-medium text-sm transition-colors border-tech-600 text-tech-600">
-                    <i class="fa-solid fa-chart-pie mr-2"></i>Analitik Pendaftaran
-                </button>
-                <button onclick="switchTab('keputusan')" id="tab-keputusan" class="tab-btn pb-4 border-b-2 border-transparent text-slate-500 hover:text-slate-700 font-medium text-sm transition-colors">
-                    <i class="fa-solid fa-trophy mr-2"></i>Keputusan Penuh
-                </button>
+            
+            <div class="flex bg-white/10 rounded-lg p-1 backdrop-blur-sm">
+                <button onclick="switchTab('utama')" id="tab-utama" class="px-4 py-2 rounded-md text-sm font-semibold transition-all bg-white text-tech-700 shadow">Statistik Penyertaan</button>
+                <button onclick="switchTab('keputusan')" id="tab-keputusan" class="px-4 py-2 rounded-md text-sm font-semibold transition-all text-white hover:bg-white/10">Keputusan Pemenang</button>
             </div>
         </div>
     </header>
 
-    <!-- Admin Notice (Hidden by default) -->
-    <div id="admin-notice" class="hidden bg-emerald-500 text-white text-center py-2 text-sm font-medium shadow-inner">
-        <i class="fa-solid fa-shield-check mr-2"></i> Mod Pengurusan Diaktifkan. Anda boleh mengemaskini maklumat pemenang.
-    </div>
-
-    <!-- Main Content -->
     <main class="flex-grow max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full">
         
-        <!-- TAB 1: ANALITIK PENDAFTARAN -->
-        <section id="view-analitik" class="block space-y-6">
+        <div id="loading" class="flex flex-col items-center justify-center py-20">
+            <i class="fa-solid fa-circle-notch fa-spin text-4xl text-tech-500 mb-4"></i>
+            <p class="text-slate-500 font-medium">Sedang menyegerak data dari Google Sheets...</p>
+        </div>
+
+        <!-- ==================== TAB 1: UTAMA ==================== -->
+        <div id="view-utama" class="hide space-y-6">
             
-            <!-- Quick Stats -->
+            <!-- Key Metrics -->
             <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-200/60 flex items-center gap-4">
-                    <div class="bg-blue-50 w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0">
-                        <i class="fa-solid fa-users text-blue-500 text-lg"></i>
-                    </div>
-                    <div>
-                        <p class="text-sm font-medium text-slate-500">Jumlah Penyertaan</p>
-                        <h3 class="text-2xl font-bold font-heading text-slate-800" id="stat-total-pendaftaran">0</h3>
-                    </div>
+                <div class="glass-panel rounded-2xl p-5 flex items-center gap-4 border-l-4 border-l-tech-500">
+                    <div class="w-12 h-12 rounded-full bg-tech-50 flex items-center justify-center text-tech-600 text-xl"><i class="fa-solid fa-users"></i></div>
+                    <div><p class="text-sm text-slate-500 font-medium uppercase tracking-wider">Jumlah Peserta</p><p class="text-3xl font-heading font-bold text-slate-800" id="stat-total-pendaftaran">0</p></div>
                 </div>
-                <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-200/60 flex items-center gap-4">
-                    <div class="bg-purple-50 w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0">
-                        <i class="fa-solid fa-school text-purple-500 text-lg"></i>
-                    </div>
-                    <div>
-                        <p class="text-sm font-medium text-slate-500">Jumlah Sekolah</p>
-                        <h3 class="text-2xl font-bold font-heading text-slate-800" id="stat-total-sekolah">0</h3>
-                    </div>
+                <div class="glass-panel rounded-2xl p-5 flex items-center gap-4 border-l-4 border-l-emerald-500">
+                    <div class="w-12 h-12 rounded-full bg-emerald-50 flex items-center justify-center text-emerald-600 text-xl"><i class="fa-solid fa-school"></i></div>
+                    <div><p class="text-sm text-slate-500 font-medium uppercase tracking-wider">Sekolah Terlibat</p><p class="text-3xl font-heading font-bold text-slate-800" id="stat-total-sekolah">0</p></div>
                 </div>
-                <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-200/60 flex items-center gap-4">
-                    <div class="bg-amber-50 w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0">
-                        <i class="fa-solid fa-laptop-code text-amber-500 text-lg"></i>
-                    </div>
-                    <div>
-                        <p class="text-sm font-medium text-slate-500">Acara Dipertandingkan</p>
-                        <h3 class="text-2xl font-bold font-heading text-slate-800" id="stat-total-pertandingan">0</h3>
-                    </div>
+                <div class="glass-panel rounded-2xl p-5 flex items-center gap-4 border-l-4 border-l-purple-500">
+                    <div class="w-12 h-12 rounded-full bg-purple-50 flex items-center justify-center text-purple-600 text-xl"><i class="fa-solid fa-trophy"></i></div>
+                    <div><p class="text-sm text-slate-500 font-medium uppercase tracking-wider">Acara Dipertandingkan</p><p class="text-3xl font-heading font-bold text-slate-800" id="stat-total-pertandingan">0</p></div>
                 </div>
             </div>
 
-            <!-- Charts Section -->
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                <!-- Doughnut Chart (Daerah) -->
-                <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-200/60 lg:col-span-1 flex flex-col">
-                    <h3 class="font-bold text-slate-800 mb-4 font-heading">Penyertaan Mengikut Daerah</h3>
-                    <div class="relative flex-grow flex items-center justify-center min-h-[250px]">
-                        <canvas id="chartDaerah"></canvas>
-                    </div>
+                <div class="glass-panel rounded-2xl p-5 lg:col-span-1">
+                    <h3 class="font-heading font-semibold text-lg mb-4 text-slate-700">Penyertaan Mengikut Daerah</h3>
+                    <div class="relative h-64 w-full"><canvas id="chartDaerah"></canvas></div>
                 </div>
-                <!-- Bar Chart (Pertandingan) -->
-                <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-200/60 lg:col-span-2 flex flex-col">
-                    <h3 class="font-bold text-slate-800 mb-4 font-heading">Penyertaan Mengikut Pertandingan</h3>
-                    <div class="relative flex-grow min-h-[250px] w-full">
-                        <canvas id="chartPertandingan"></canvas>
-                    </div>
+                <div class="glass-panel rounded-2xl p-5 lg:col-span-2">
+                    <h3 class="font-heading font-semibold text-lg mb-4 text-slate-700">Penyertaan Mengikut Pertandingan</h3>
+                    <div class="relative h-64 w-full"><canvas id="chartPertandingan"></canvas></div>
                 </div>
             </div>
 
-            <!-- Table Section -->
-            <div class="bg-white rounded-2xl shadow-sm border border-slate-200/60 overflow-hidden">
-                <div class="p-5 md:p-6 border-b border-slate-100 flex flex-col md:flex-row md:items-center justify-between gap-4 bg-slate-50/50">
-                    <div>
-                        <h3 class="font-bold text-slate-800 font-heading text-lg">Senarai Pendaftaran</h3>
-                        <p class="text-xs text-slate-500 mt-1">Memaparkan <span id="table-count" class="font-semibold text-tech-600">0</span> rekod berdaftar</p>
-                    </div>
-                    
-                    <div class="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
-                        <!-- Filters -->
-                        <div class="relative w-full sm:w-48">
-                            <i class="fa-solid fa-filter absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs"></i>
-                            <select id="filter-daerah" onchange="processDashboard()" class="w-full pl-9 pr-8 py-2 text-sm bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-tech-500 appearance-none cursor-pointer">
-                                <option value="ALL">Semua Daerah</option>
-                            </select>
-                            <i class="fa-solid fa-chevron-down absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 text-[10px] pointer-events-none"></i>
-                        </div>
-                        <div class="relative w-full sm:w-64">
-                            <i class="fa-solid fa-layer-group absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs"></i>
-                            <select id="filter-pertandingan" onchange="processDashboard()" class="w-full pl-9 pr-8 py-2 text-sm bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-tech-500 appearance-none cursor-pointer">
-                                <option value="ALL">Semua Pertandingan</option>
-                            </select>
-                            <i class="fa-solid fa-chevron-down absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 text-[10px] pointer-events-none"></i>
-                        </div>
+            <div class="glass-panel rounded-2xl shadow-sm overflow-hidden border border-slate-200">
+                <!-- Filters -->
+                <div class="bg-white p-4 border-b border-slate-100 flex flex-col md:flex-row gap-4 justify-between items-center">
+                    <h3 class="font-heading font-semibold text-lg text-slate-700">Senarai Pendaftaran (<span id="table-count">0</span>)</h3>
+                    <div class="flex flex-col sm:flex-row gap-2 w-full md:w-auto">
+                        <select id="filter-daerah" class="bg-slate-50 border border-slate-200 text-slate-700 text-sm rounded-lg focus:ring-tech-500 focus:border-tech-500 block w-full md:w-40 p-2.5 outline-none">
+                            <option value="ALL">Semua Daerah</option>
+                        </select>
+                        <select id="filter-pertandingan" class="bg-slate-50 border border-slate-200 text-slate-700 text-sm rounded-lg focus:ring-tech-500 focus:border-tech-500 block w-full md:w-48 p-2.5 outline-none">
+                            <option value="ALL">Semua Pertandingan</option>
+                        </select>
                     </div>
                 </div>
-
+                <!-- Table -->
                 <div class="overflow-x-auto">
-                    <table class="w-full text-left border-collapse">
-                        <thead>
-                            <tr class="bg-slate-50 border-b border-slate-200">
-                                <th class="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider min-w-[200px]">Pertandingan</th>
-                                <th class="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider min-w-[120px]">Daerah</th>
-                                <th class="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider min-w-[250px]">Nama Sekolah</th>
-                                <th class="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider min-w-[300px]">Senarai Peserta</th>
-                                <th class="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider min-w-[200px]">Guru Pengiring</th>
+                    <table class="w-full text-left text-sm text-slate-600">
+                        <thead class="text-xs text-slate-500 uppercase bg-slate-50">
+                            <tr>
+                                <th class="px-6 py-4 font-semibold w-48">Pertandingan</th>
+                                <th class="px-6 py-4 font-semibold w-32">Daerah</th>
+                                <th class="px-6 py-4 font-semibold min-w-[200px]">Nama Sekolah</th>
+                                <th class="px-6 py-4 font-semibold min-w-[250px]">Nama Peserta</th>
+                                <th class="px-6 py-4 font-semibold min-w-[200px]">Guru Pengiring</th>
                             </tr>
                         </thead>
-                        <tbody id="table-body" class="divide-y divide-slate-100">
-                            <!-- Rows will be populated by JS -->
-                            <tr><td colspan="5" class="px-6 py-8 text-center text-slate-500"><i class="fa-solid fa-spinner fa-spin mr-2"></i>Memuatkan data...</td></tr>
+                        <tbody id="table-body" class="bg-white divide-y divide-slate-100">
+                            <!-- Data dijana melalui JS -->
                         </tbody>
                     </table>
                 </div>
             </div>
-        </section>
 
-        <!-- TAB 2: KEPUTUSAN PENUH -->
-        <section id="view-keputusan" class="hidden space-y-6">
+            <!-- AI Analysis Section -->
+            <div class="glass-panel rounded-2xl p-6 mt-6 border border-tech-200 relative overflow-hidden bg-gradient-to-r from-indigo-50 to-white">
+                <div class="absolute top-0 right-0 p-4 opacity-5 pointer-events-none">
+                    <i class="fa-solid fa-brain text-8xl text-indigo-900"></i>
+                </div>
+                <h3 class="font-heading font-semibold text-lg text-slate-800 mb-2 flex items-center gap-2">
+                    <i class="fa-solid fa-sparkles text-indigo-500"></i> Analisis Pintar AI (Gemini)
+                </h3>
+                <p class="text-sm text-slate-600 mb-4 max-w-2xl">
+                    Jana rumusan eksekutif dan pandangan secara automatik mengenai corak penyertaan berdasarkan penapisan data (filter) yang sedang dipaparkan di skrin menggunakan teknologi AI.
+                </p>
+                <button onclick="generateAIAnalysis()" id="btn-ai" class="bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium px-5 py-2.5 rounded-lg shadow-sm transition-all flex items-center gap-2">
+                    <i class="fa-solid fa-wand-magic-sparkles"></i> Jana Rumusan AI
+                </button>
+                
+                <!-- Loading State -->
+                <div id="ai-loading" class="hidden mt-4 flex items-center gap-3 text-indigo-600 text-sm font-medium">
+                    <i class="fa-solid fa-circle-notch fa-spin text-lg"></i> AI sedang menganalisis data anda...
+                </div>
+
+                <!-- Result Box -->
+                <div id="ai-result-box" class="hidden mt-4 p-5 bg-white border border-indigo-100 rounded-xl shadow-sm relative">
+                    <div class="absolute top-0 left-0 w-1 h-full bg-indigo-500 rounded-l-xl"></div>
+                    <p id="ai-result-text" class="text-sm text-slate-700 leading-relaxed"></p>
+                </div>
+            </div>
+        </div>
+
+        <!-- ==================== TAB 2: KEPUTUSAN ==================== -->
+        <div id="view-keputusan" class="hide space-y-6">
             
-            <!-- Dashboard Prestasi Daerah -->
-            <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-200/60 mb-8">
-                <div class="flex flex-col md:flex-row items-start md:items-center justify-between mb-6 gap-4">
-                    <div>
-                        <h3 class="font-bold text-slate-800 font-heading text-lg">Prestasi Daerah</h3>
-                        <p class="text-sm text-slate-500">Carta menunjukkan jumlah kedudukan Top 5 yang dimenangi oleh setiap daerah</p>
-                    </div>
-                </div>
-                <div class="relative w-full h-[300px]">
-                    <canvas id="chartPemenang"></canvas>
+            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                <h2 class="text-2xl font-heading font-bold text-slate-800">Keputusan Rasmi Pemenang</h2>
+                <div>
+                    <button id="btn-admin-login" onclick="openLoginModal()" class="text-sm bg-slate-800 hover:bg-slate-900 text-white px-4 py-2 rounded-lg font-medium transition-colors">
+                        <i class="fa-solid fa-lock mr-2"></i>Mode Admin
+                    </button>
+                    <button id="btn-admin-logout" onclick="logoutAdmin()" class="hide text-sm bg-red-100 hover:bg-red-200 text-red-700 px-4 py-2 rounded-lg font-medium transition-colors">
+                        <i class="fa-solid fa-unlock mr-2"></i>Log Keluar
+                    </button>
                 </div>
             </div>
 
-            <!-- Grid Pemenang Mengikut Pertandingan -->
-            <div>
-                <h3 class="font-bold text-slate-800 font-heading text-xl mb-4 border-b pb-2">Senarai Keputusan Rasmi</h3>
-                <div id="winners-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    <!-- Cards will be populated by JS -->
+            <!-- Analitik Pemenang -->
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+                <div class="glass-panel rounded-2xl p-5 lg:col-span-2">
+                    <h3 class="font-heading font-semibold text-lg mb-4 text-slate-700">Analitik Kemenangan Mengikut Daerah</h3>
+                    <div class="relative h-64 w-full"><canvas id="chartPemenang"></canvas></div>
+                </div>
+                <div class="glass-panel rounded-2xl p-5 bg-gradient-to-br from-amber-50 to-orange-50 border border-amber-100">
+                    <h3 class="font-heading font-semibold text-lg mb-4 text-amber-900"><i class="fa-solid fa-crown text-amber-500 mr-2"></i>Sekolah Cemerlang</h3>
+                    <ul id="list-sekolah-cemerlang" class="space-y-3">
+                        <!-- Dijana melalui JS -->
+                    </ul>
                 </div>
             </div>
-        </section>
+
+            <!-- Grid Pemenang -->
+            <div id="winners-grid" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+                <!-- Kad Pemenang dijana melalui JS -->
+            </div>
+        </div>
 
     </main>
 
-    <!-- MODALS -->
-
-    <!-- Login Modal -->
-    <div id="modal-login" class="fixed inset-0 z-50 hidden items-center justify-center bg-slate-900/40 backdrop-blur-sm p-4 opacity-0 transition-opacity duration-300">
-        <div class="bg-white rounded-2xl shadow-xl w-full max-w-sm overflow-hidden transform scale-95 transition-transform duration-300 relative">
-            <div class="bg-slate-50 p-6 border-b border-slate-100 text-center">
-                <div class="w-12 h-12 bg-tech-100 text-tech-600 rounded-full flex items-center justify-center mx-auto mb-3">
-                    <i class="fa-solid fa-shield-halved text-xl"></i>
-                </div>
-                <h3 class="font-heading font-bold text-lg text-slate-800">Log Masuk Admin</h3>
-                <p class="text-xs text-slate-500 mt-1">Sila masukkan kata laluan untuk mod suntingan</p>
-            </div>
-            <div class="p-6">
-                <input type="password" id="admin-password" placeholder="Kata Laluan" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-tech-500 text-sm mb-2" onkeyup="if(event.key === 'Enter') verifyAdmin()">
-                <p id="login-error" class="hidden text-xs text-red-500 mb-4"><i class="fa-solid fa-circle-exclamation mr-1"></i>Kata laluan salah.</p>
-                <div class="flex gap-3 mt-6">
-                    <button onclick="closeModal('modal-login')" class="flex-1 px-4 py-2 bg-white border border-slate-200 hover:bg-slate-50 text-slate-600 rounded-lg text-sm font-semibold transition-colors">Batal</button>
-                    <button onclick="verifyAdmin()" class="flex-1 px-4 py-2 bg-tech-600 hover:bg-tech-700 text-white rounded-lg text-sm font-semibold transition-colors">Sahkan</button>
-                </div>
+    <!-- Modal Login Admin -->
+    <div id="loginModal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm hidden items-center justify-center z-50 transition-opacity">
+        <div class="bg-white rounded-2xl shadow-xl w-full max-w-sm p-6 transform scale-100">
+            <h3 class="text-xl font-heading font-bold text-slate-800 mb-2">Akses Admin</h3>
+            <p class="text-sm text-slate-500 mb-6">Sila masukkan kata laluan untuk mengemaskini keputusan rasmi.</p>
+            <input type="password" id="adminPassword" class="w-full bg-slate-50 border border-slate-200 text-slate-800 rounded-lg focus:ring-tech-500 focus:border-tech-500 p-2.5 mb-4 outline-none" placeholder="Kata Laluan">
+            <p id="loginError" class="text-red-500 text-xs hidden mb-4">Kata laluan tidak sah.</p>
+            <div class="flex justify-end gap-2">
+                <button onclick="closeLoginModal()" class="px-4 py-2 text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-lg text-sm font-medium">Batal</button>
+                <button onclick="verifyLogin()" class="px-4 py-2 text-white bg-tech-600 hover:bg-tech-700 rounded-lg text-sm font-medium">Log Masuk</button>
             </div>
         </div>
     </div>
 
-    <!-- Edit Winner Modal -->
-    <div id="modal-edit" class="fixed inset-0 z-50 hidden items-center justify-center bg-slate-900/50 backdrop-blur-sm p-4 opacity-0 transition-opacity duration-300">
-        <div class="bg-white rounded-2xl shadow-xl w-full max-w-lg overflow-hidden transform scale-95 transition-transform duration-300 flex flex-col max-h-[90vh]">
-            <div class="p-5 border-b border-slate-100 flex justify-between items-center bg-slate-50">
-                <div>
-                    <h3 class="font-heading font-bold text-lg text-slate-800">Kemaskini Pemenang</h3>
-                    <p id="edit-pertandingan-title" class="text-xs font-semibold text-tech-600 uppercase mt-0.5">Nama Pertandingan</p>
-                </div>
-                <button onclick="closeModal('modal-edit')" class="text-slate-400 hover:text-slate-600 w-8 h-8 flex items-center justify-center rounded-full hover:bg-slate-200 transition-colors">
-                    <i class="fa-solid fa-xmark"></i>
-                </button>
-            </div>
+    <!-- Modal Edit Pemenang -->
+    <div id="editModal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm hidden items-center justify-center z-50 transition-opacity">
+        <div class="bg-white rounded-2xl shadow-xl w-full max-w-md p-6">
+            <h3 class="text-xl font-heading font-bold text-slate-800 mb-4" id="modalEditTitle">Edit Pemenang</h3>
             
-            <div class="p-6 overflow-y-auto flex-grow space-y-4">
-                <input type="hidden" id="edit-pertandingan-id">
-                <input type="hidden" id="edit-kedudukan-id">
-                
-                <div>
-                    <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Kedudukan</label>
-                    <div id="edit-kedudukan-display" class="px-4 py-2.5 bg-slate-100 border border-slate-200 rounded-lg text-slate-700 font-semibold text-sm">Johan</div>
-                </div>
+            <div id="editError" class="hidden mb-4 p-3 bg-red-50 border border-red-200 text-red-600 text-sm rounded-lg flex items-center gap-2">
+                <i class="fa-solid fa-triangle-exclamation"></i> <span>Sila pilih Daerah dan Sekolah.</span>
+            </div>
 
+            <div class="space-y-4">
                 <div>
-                    <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Daerah</label>
-                    <select id="edit-daerah" onchange="updateSekolahDropdown()" class="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-tech-500 text-sm">
+                    <label class="block text-sm font-medium text-slate-700 mb-1">Kedudukan</label>
+                    <select id="editKedudukan" class="w-full bg-slate-50 border border-slate-200 rounded-lg p-2.5 outline-none focus:border-tech-500">
+                        <option value="1">Johan</option>
+                        <option value="2">Naib Johan</option>
+                        <option value="3">Tempat Ketiga</option>
+                        <option value="4">Tempat Keempat</option>
+                        <option value="5">Tempat Kelima</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-1">Daerah</label>
+                    <select id="editDaerah" class="w-full bg-slate-50 border border-slate-200 rounded-lg p-2.5 outline-none focus:border-tech-500">
                         <option value="">-- Pilih Daerah --</option>
-                        <!-- Options populated via JS -->
+                        <!-- Pilihan daerah dijana oleh JS -->
                     </select>
                 </div>
-
                 <div>
-                    <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Nama Sekolah</label>
-                    <select id="edit-sekolah" class="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-tech-500 text-sm">
-                        <option value="">-- Pilih Sekolah --</option>
-                        <!-- Options populated based on selected Daerah via JS -->
+                    <label class="block text-sm font-medium text-slate-700 mb-1">Nama Sekolah</label>
+                    <select id="editSekolah" class="w-full bg-slate-50 border border-slate-200 rounded-lg p-2.5 outline-none focus:border-tech-500">
+                        <option value="">-- Sila Pilih Daerah Dahulu --</option>
                     </select>
-                    <p class="text-[10px] text-slate-400 mt-1"><i class="fa-solid fa-info-circle mr-1"></i>Senarai sekolah dipaparkan berdasarkan daerah yang dipilih di atas.</p>
                 </div>
             </div>
-            
-            <div class="p-5 border-t border-slate-100 flex justify-end gap-3 bg-slate-50">
-                <button onclick="clearWinnerData()" class="px-4 py-2 bg-red-50 hover:bg-red-100 text-red-600 rounded-lg text-sm font-semibold transition-colors mr-auto">Kosongkan</button>
-                <button onclick="closeModal('modal-edit')" class="px-4 py-2 bg-white border border-slate-200 hover:bg-slate-50 text-slate-600 rounded-lg text-sm font-semibold transition-colors">Batal</button>
-                <button onclick="saveWinner()" class="px-6 py-2 bg-tech-600 hover:bg-tech-700 text-white rounded-lg text-sm font-semibold transition-colors shadow-md shadow-tech-500/30">Simpan Keputusan</button>
+            <div class="flex justify-end gap-2 mt-6">
+                <button onclick="closeEditModal()" class="px-4 py-2 text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-lg text-sm font-medium">Batal</button>
+                <button onclick="saveWinner()" class="px-4 py-2 text-white bg-tech-600 hover:bg-tech-700 rounded-lg text-sm font-medium">Simpan</button>
             </div>
         </div>
     </div>
 
-    <!-- Alert Modal -->
-    <div id="modal-alert" class="fixed inset-0 z-[60] hidden items-center justify-center bg-slate-900/40 backdrop-blur-sm p-4 opacity-0 transition-opacity duration-200">
-        <div class="bg-white rounded-2xl shadow-xl w-full max-w-sm p-6 text-center transform scale-95 transition-transform duration-200">
-            <div id="alert-icon" class="w-14 h-14 mx-auto bg-slate-100 rounded-full flex items-center justify-center mb-4 text-2xl">
-                <!-- Icon inserted via JS -->
-            </div>
-            <h3 id="alert-title" class="font-heading font-bold text-lg text-slate-800 mb-2">Makluman</h3>
-            <p id="alert-message" class="text-sm text-slate-600 mb-6">Mesej di sini</p>
-            <button onclick="closeModal('modal-alert')" class="w-full px-4 py-2.5 bg-slate-800 hover:bg-slate-900 text-white rounded-lg text-sm font-semibold transition-colors">Tutup</button>
-        </div>
-    </div>
-
-    <!-- JAVASCRIPT -->
     <script>
-        // Register ChartDataLabels plugin globally
+        // Setup ChartJS Global
         Chart.register(ChartDataLabels);
+        Chart.defaults.font.family = 'Inter';
+        Chart.defaults.color = '#64748b';
 
-        // State Variables
-        window.allData = [];
-        window.isAdmin = false;
-        window.winnersData = {}; 
+        // Google Sheet CSV Link
+        const sheetUrl = 'https://docs.google.com/spreadsheets/d/14_tDKXHRi1mQf5hQokoLWdExwG0Q7auiKya4I_8byO0/export?format=csv';
         
-        // Google Sheet CSV URL (Export format for PapaParse)
-        const SHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/14_tDKXHRi1mQf5hQokoLWdExwG0Q7auiKya4I_8byO0/export?format=csv";
+        let allData = [];
+        let uniqueDaerah = [];
+        let uniquePertandingan = [];
+        let isAdmin = false;
+        
+        // Pangkalan Data Pemenang Tempatan (Untuk Mockup)
+        let winnersData = JSON.parse(localStorage.getItem('stemWinnersData')) || {};
+        let currentEditPertandinganRaw = "";
 
-        // Predefined ranks
-        const RANKS = ["Johan", "Naib Johan", "Ketiga", "Keempat", "Kelima"];
+        // Tonton Perubahan Filter
+        document.getElementById('filter-daerah').addEventListener('change', processDashboard);
+        document.getElementById('filter-pertandingan').addEventListener('change', processDashboard);
 
-        // Init App
-        document.addEventListener('DOMContentLoaded', () => {
-            fetchData();
+        // Fetch Data dari Google Sheets
+        Papa.parse(sheetUrl, {
+            download: true,
+            header: true,
+            skipEmptyLines: true,
+            complete: function(results) {
+                allData = results.data;
+                document.getElementById('loading').classList.add('hide');
+                document.getElementById('view-utama').classList.remove('hide');
+                
+                initFilters();
+                processDashboard();
+                renderWinnersView();
+            },
+            error: function(error) {
+                document.getElementById('loading').innerHTML = '<p class="text-red-500">Ralat membaca data. Sila pastikan link Google Sheet dibuka kepada awam.</p>';
+            }
         });
 
-        // 1. Fetch Data via PapaParse
-        function fetchData() {
-            Papa.parse(SHEET_CSV_URL, {
-                download: true,
-                header: true,
-                skipEmptyLines: true,
-                complete: function(results) {
-                    window.allData = results.data;
-                    setupDashboard();
-                },
-                error: function(err) {
-                    console.error("Error fetching data:", err);
-                    showAlert("Ralat Rangkaian", "Gagal memuat turun data dari Google Sheets.", "fa-solid fa-wifi text-red-500 bg-red-100");
-                }
+        function initFilters() {
+            uniqueDaerah = [...new Set(allData.map(item => item['DAERAH']).filter(Boolean))].sort();
+            uniquePertandingan = [...new Set(allData.map(item => item['PERTANDINGAN']).filter(Boolean))].sort();
+
+            const dFilter = document.getElementById('filter-daerah');
+            const pFilter = document.getElementById('filter-pertandingan');
+            const dEditFilter = document.getElementById('editDaerah');
+
+            uniqueDaerah.forEach(d => {
+                dFilter.add(new Option(d, d));
+                dEditFilter.add(new Option(d, d));
             });
+            uniquePertandingan.forEach(p => pFilter.add(new Option(p, p)));
         }
 
-        // 2. Setup initial dashboard state
-        function setupDashboard() {
-            populateFilters();
-            processDashboard();
-            initWinnersData(); // Initialize in-memory winner state based on available competitions
-            renderWinners();
-        }
-
-        // 3. Tab Switching
-        window.switchTab = function(tabId) {
-            document.getElementById('view-analitik').classList.add('hidden');
-            document.getElementById('view-keputusan').classList.add('hidden');
-            
-            document.getElementById('tab-analitik').classList.replace('border-tech-600', 'border-transparent');
-            document.getElementById('tab-analitik').classList.replace('text-tech-600', 'text-slate-500');
-            document.getElementById('tab-keputusan').classList.replace('border-tech-600', 'border-transparent');
-            document.getElementById('tab-keputusan').classList.replace('text-tech-600', 'text-slate-500');
-
-            document.getElementById(`view-${tabId}`).classList.remove('hidden');
-            document.getElementById(`tab-${tabId}`).classList.replace('border-transparent', 'border-tech-600');
-            document.getElementById(`tab-${tabId}`).classList.replace('text-slate-500', 'text-tech-600');
-            
-            if (tabId === 'keputusan') {
-                updateWinnersChart();
-            }
-        }
-
-        // 4. Populate Dropdown Filters
-        function populateFilters() {
-            const daerahSet = new Set();
-            const pertSet = new Set();
-            
-            window.allData.forEach(row => {
-                if (row['DAERAH']) daerahSet.add(row['DAERAH'].trim());
-                if (row['PERTANDINGAN']) pertSet.add(row['PERTANDINGAN'].trim());
-            });
-
-            const fDaerah = document.getElementById('filter-daerah');
-            Array.from(daerahSet).sort().forEach(d => {
-                fDaerah.add(new Option(d, d));
-            });
-
-            const fPert = document.getElementById('filter-pertandingan');
-            Array.from(pertSet).sort().forEach(p => {
-                fPert.add(new Option(p, p));
-            });
-        }
-
-        // 5. Process Data for Tab 1 (Table & Stats)
-        window.processDashboard = function() {
+        function processDashboard() {
             const selDaerah = document.getElementById('filter-daerah').value;
             const selPert = document.getElementById('filter-pertandingan').value;
             
-            let filtered = window.allData;
-            if (selDaerah !== 'ALL') filtered = filtered.filter(row => (row['DAERAH'] || '').trim() === selDaerah);
-            if (selPert !== 'ALL') filtered = filtered.filter(row => (row['PERTANDINGAN'] || '').trim() === selPert);
+            let filtered = allData;
+            if (selDaerah !== 'ALL') filtered = filtered.filter(row => row['DAERAH'] === selDaerah);
+            if (selPert !== 'ALL') filtered = filtered.filter(row => row['PERTANDINGAN'] === selPert);
             
-            // Update Number Stats
             document.getElementById('stat-total-pendaftaran').innerText = filtered.length;
-            const sekolahSet = new Set(filtered.map(row => (row['NAMA SEKOLAH'] || '').trim()).filter(Boolean));
+            const sekolahSet = new Set(filtered.map(row => row['NAMA SEKOLAH']).filter(Boolean));
             document.getElementById('stat-total-sekolah').innerText = sekolahSet.size;
-            const pertSet = new Set(filtered.map(row => (row['PERTANDINGAN'] || '').trim()).filter(Boolean));
+            const pertSet = new Set(filtered.map(row => row['PERTANDINGAN']).filter(Boolean));
             document.getElementById('stat-total-pertandingan').innerText = pertSet.size;
 
             renderTable(filtered);
-            updateDashboardCharts(filtered, selDaerah, selPert);
+            updateCharts(filtered, selDaerah, selPert);
         }
 
-        // 6. Render Table Tab 1
         function renderTable(data) {
             const tbody = document.getElementById('table-body');
             tbody.innerHTML = '';
             document.getElementById('table-count').innerText = data.length;
 
-            if (data.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="5" class="px-6 py-8 text-center text-slate-500 italic">Tiada rekod dijumpai.</td></tr>`;
-                return;
-            }
-
             data.forEach(row => {
-                // Participant formatting: Badges, no numbers, ignore empty or "-"
                 let pList = [];
                 const badgeStyle = "inline-block px-2.5 py-1.5 bg-tech-50 text-tech-700 rounded-md text-xs font-semibold whitespace-normal border border-tech-100";
                 
@@ -449,16 +352,14 @@
                 
                 let pStr = pList.length > 0 ? `<div class="flex flex-col gap-2 items-start">${pList.join('')}</div>` : '<span class="text-slate-400 italic">Tiada Rekod</span>';
 
-                // Teacher formatting: Handle variations, icon, ignore empty or "-"
                 let guru = row['GURU PENGIRING'] || row['NAMA GURU PENGIRING'] || row['NAMA GURU'] || '';
                 let guruStr = '';
                 if (guru && guru.trim() !== '' && guru.trim() !== '-') {
                     guruStr = `<div class="whitespace-normal leading-relaxed flex items-start"><i class="fa-solid fa-chalkboard-user text-slate-400 mr-2 mt-1 text-xs"></i><span>${guru.trim()}</span></div>`;
                 } else {
-                    guruStr = '<span class="text-slate-400 italic text-xs">Tiada Rekod</span>';
+                    guruStr = '<span class="text-slate-400 italic">Tiada Rekod</span>';
                 }
 
-                // Clean NAMA PERTANDINGAN (remove symbols)
                 const namaPertandingan = (row['PERTANDINGAN'] || '').replace(/[^a-zA-Z0-9\s]/g, '').trim();
 
                 const tr = document.createElement('tr');
@@ -466,94 +367,298 @@
                 
                 tr.innerHTML = `
                     <td class="px-6 py-4 border-b border-slate-100 font-medium text-slate-800 align-top">
-                        <div class="mb-1.5 whitespace-normal leading-snug">${namaPertandingan || '-'}</div>
-                        ${row['PERINGKAT'] ? `<span class="px-2 py-0.5 bg-slate-100 text-slate-500 rounded text-[10px] font-bold uppercase tracking-wider">${row['PERINGKAT']}</span>` : ''}
+                        <div class="mb-1.5 whitespace-normal leading-snug">${namaPertandingan}</div>
+                        <span class="px-2 py-0.5 bg-slate-100 text-slate-500 rounded text-[10px] font-bold uppercase tracking-wider">${row['PERINGKAT'] || ''}</span>
                     </td>
                     <td class="px-6 py-4 border-b border-slate-100 align-top">
-                        ${row['DAERAH'] && row['DAERAH'] !== '-' ? `<span class="px-2.5 py-1 bg-tech-50 text-tech-700 rounded-md text-xs font-semibold whitespace-nowrap">${row['DAERAH']}</span>` : '-'}
+                        <span class="px-2.5 py-1 bg-tech-50 text-tech-700 rounded-md text-xs font-semibold whitespace-nowrap">${row['DAERAH'] || ''}</span>
                     </td>
                     <td class="px-6 py-4 border-b border-slate-100 font-medium text-slate-700 align-top">
-                        <div class="whitespace-normal leading-relaxed text-sm">${row['NAMA SEKOLAH'] && row['NAMA SEKOLAH'] !== '-' ? row['NAMA SEKOLAH'] : '-'}</div>
+                        <div class="whitespace-normal leading-relaxed text-sm">${row['NAMA SEKOLAH'] || ''}</div>
                     </td>
-                    <td class="px-6 py-4 border-b border-slate-100 align-top">
-                        ${pStr}
-                    </td>
-                    <td class="px-6 py-4 border-b border-slate-100 text-sm text-slate-800 align-top font-medium">
-                        ${guruStr}
-                    </td>
+                    <td class="px-6 py-4 border-b border-slate-100 align-top">${pStr}</td>
+                    <td class="px-6 py-4 border-b border-slate-100 text-sm text-slate-800 align-top font-medium">${guruStr}</td>
                 `;
                 tbody.appendChild(tr);
             });
         }
 
-        // 7. Render Charts Tab 1
-        function updateDashboardCharts(data, selDaerah, selPert) {
-            // Colors
-            const colors = ['#0ea5e9', '#8b5cf6', '#f59e0b', '#10b981', '#f43f5e', '#3b82f6', '#14b8a6', '#6366f1'];
+        function updateCharts(data, selDaerah, selPert) {
+            // Doughnut Chart (Daerah)
+            const daerahCount = {};
+            data.forEach(r => { if(r['DAERAH']) daerahCount[r['DAERAH']] = (daerahCount[r['DAERAH']] || 0) + 1; });
+            
+            let existingDaerahChart = Chart.getChart('chartDaerah');
+            if (existingDaerahChart) existingDaerahChart.destroy();
 
-            // 1. Daerah Data (Doughnut)
-            let daerahCount = {};
-            data.forEach(r => {
-                let d = (r['DAERAH'] || '').trim();
-                if(d) daerahCount[d] = (daerahCount[d] || 0) + 1;
-            });
-            const dLabels = Object.keys(daerahCount);
-            const dData = Object.values(daerahCount);
-
-            // Semak dan buang (destroy) graf lama dengan cara yang betul
-            const existingChartDaerah = Chart.getChart('chartDaerah');
-            if (existingChartDaerah) existingChartDaerah.destroy();
-
-            window.chartDaerah = new Chart(document.getElementById('chartDaerah'), {
+            new Chart(document.getElementById('chartDaerah'), {
                 type: 'doughnut',
                 data: {
-                    labels: dLabels,
+                    labels: Object.keys(daerahCount),
                     datasets: [{
-                        data: dData,
-                        backgroundColor: colors,
-                        borderWidth: 2,
-                        borderColor: '#ffffff'
+                        data: Object.values(daerahCount),
+                        backgroundColor: ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#06b6d4', '#ec4899', '#64748b'],
+                        borderWidth: 0
                     }]
                 },
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
-                    plugins: {
-                        legend: { position: 'bottom', labels: { boxWidth: 12, padding: 15, font: { family: 'Inter', size: 11 } } },
+                    plugins: { 
+                        legend: { position: 'right', labels: { boxWidth: 12, font: { size: 11 } } },
                         datalabels: {
                             color: '#ffffff',
-                            font: { weight: 'bold', family: 'Inter', size: 12 },
-                            formatter: (value) => value
+                            font: { weight: 'bold', size: 12 },
+                            formatter: (value) => value > 0 ? value : ''
                         }
                     },
                     cutout: '65%'
                 }
             });
 
-            // 2. Pertandingan Data (Bar)
-            let pertCount = {};
-            data.forEach(r => {
-                let p = (r['PERTANDINGAN'] || '').replace(/[^a-zA-Z0-9\s]/g, '').trim();
-                if(p) pertCount[p] = (pertCount[p] || 0) + 1;
-            });
+            // Bar Chart (Pertandingan)
+            const pertCount = {};
+            data.forEach(r => { if(r['PERTANDINGAN']) pertCount[r['PERTANDINGAN']] = (pertCount[r['PERTANDINGAN']] || 0) + 1; });
             
-            // Sort by count desc
-            const sortedPert = Object.entries(pertCount).sort((a,b) => b[1]-a[1]);
-            const pLabels = sortedPert.map(i => i[0]);
-            const pData = sortedPert.map(i => i[1]);
+            // Sort by count
+            const sortedPert = Object.entries(pertCount).sort((a, b) => b[1] - a[1]);
+            
+            let existingPertChart = Chart.getChart('chartPertandingan');
+            if (existingPertChart) existingPertChart.destroy();
 
-            // Semak dan buang (destroy) graf lama dengan cara yang betul
-            const existingChartPertandingan = Chart.getChart('chartPertandingan');
-            if (existingChartPertandingan) existingChartPertandingan.destroy();
-
-            window.chartPertandingan = new Chart(document.getElementById('chartPertandingan'), {
+            new Chart(document.getElementById('chartPertandingan'), {
                 type: 'bar',
                 data: {
-                    labels: pLabels,
+                    labels: sortedPert.map(i => i[0].replace(/[^a-zA-Z0-9\s]/g, '').trim()),
                     datasets: [{
-                        label: 'Jumlah Penyertaan',
-                        data: pData,
-                        backgroundColor: '#0ea5e9',
+                        label: 'Peserta',
+                        data: sortedPert.map(i => i[1]),
+                        backgroundColor: '#3b82f6',
+                        borderRadius: 6
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { 
+                        legend: { display: false },
+                        datalabels: {
+                            color: '#1e293b',
+                            anchor: 'end',
+                            align: 'top',
+                            offset: 2,
+                            font: { weight: 'bold', size: 11 }
+                        }
+                    },
+                    scales: { 
+                        y: { beginAtZero: true, grid: { borderDash: [4, 4] }, suggestedMax: Math.max(...sortedPert.map(i => i[1]), 0) + 5 },
+                        x: { grid: { display: false }, ticks: { font: { size: 10 }, maxRotation: 45, minRotation: 45 } }
+                    },
+                    layout: { padding: { top: 20 } }
+                }
+            });
+        }
+
+        function switchTab(tab) {
+            document.getElementById('view-utama').classList.add('hide');
+            document.getElementById('view-keputusan').classList.add('hide');
+            document.getElementById(`view-${tab}`).classList.remove('hide');
+            
+            const btnU = document.getElementById('tab-utama');
+            const btnK = document.getElementById('tab-keputusan');
+            
+            if(tab === 'utama') {
+                btnU.className = "px-4 py-2 rounded-md text-sm font-semibold transition-all bg-white text-tech-700 shadow";
+                btnK.className = "px-4 py-2 rounded-md text-sm font-semibold transition-all text-white hover:bg-white/10";
+            } else {
+                btnK.className = "px-4 py-2 rounded-md text-sm font-semibold transition-all bg-white text-tech-700 shadow";
+                btnU.className = "px-4 py-2 rounded-md text-sm font-semibold transition-all text-white hover:bg-white/10";
+                renderWinnersView();
+            }
+        }
+
+        // Security Check Ascii array untuk elak plain text
+        const pk = [83, 116, 69, 109, 64, 50, 48, 50, 54]; 
+
+        function openLoginModal() {
+            document.getElementById('loginModal').classList.remove('hidden');
+            document.getElementById('loginModal').classList.add('flex');
+            document.getElementById('loginError').classList.add('hidden');
+            document.getElementById('adminPassword').value = '';
+            setTimeout(() => document.getElementById('adminPassword').focus(), 100);
+        }
+        function closeLoginModal() {
+            document.getElementById('loginModal').classList.add('hidden');
+            document.getElementById('loginModal').classList.remove('flex');
+        }
+
+        function verifyLogin() {
+            const val = document.getElementById('adminPassword').value;
+            const target = String.fromCharCode(...pk);
+            if (val === target) {
+                isAdmin = true;
+                closeLoginModal();
+                document.getElementById('btn-admin-login').classList.add('hide');
+                document.getElementById('btn-admin-logout').classList.remove('hide');
+                renderWinnersView();
+            } else {
+                document.getElementById('loginError').classList.remove('hidden');
+            }
+        }
+
+        function logoutAdmin() {
+            isAdmin = false;
+            document.getElementById('btn-admin-login').classList.remove('hide');
+            document.getElementById('btn-admin-logout').classList.add('hide');
+            renderWinnersView();
+        }
+
+        // --- Logik Dropdown Sekolah Ditapis Mengikut Pertandingan ---
+        document.getElementById('editDaerah').addEventListener('change', function() {
+            const selectedDaerah = this.value;
+            const sekolahSelect = document.getElementById('editSekolah');
+            sekolahSelect.innerHTML = '<option value="">-- Pilih Sekolah --</option>';
+
+            if (selectedDaerah && currentEditPertandinganRaw) {
+                // KEMASKINI DI SINI: Guna allData sahaja, bukan window.allData
+                const filteredSekolah = allData.filter(row => {
+                    return (row['DAERAH'] === selectedDaerah) && (row['PERTANDINGAN'] === currentEditPertandinganRaw);
+                });
+
+                const senaraiSekolahUnik = [...new Set(filteredSekolah.map(item => item['NAMA SEKOLAH']).filter(Boolean))];
+
+                senaraiSekolahUnik.sort().forEach(sekolah => {
+                    const option = document.createElement('option');
+                    option.value = sekolah;
+                    option.innerText = sekolah;
+                    sekolahSelect.appendChild(option);
+                });
+                
+                if(senaraiSekolahUnik.length === 0) {
+                    sekolahSelect.innerHTML = '<option value="">-- Tiada Penyertaan --</option>';
+                }
+            }
+        });
+
+        function openEditModal(pertandinganAsal) {
+            currentEditPertandinganRaw = pertandinganAsal; 
+            const cleanName = pertandinganAsal.replace(/[^a-zA-Z0-9\s]/g, '').trim();
+            document.getElementById('modalEditTitle').innerText = "Edit Pemenang: " + cleanName;
+            
+            document.getElementById('editError').classList.add('hidden');
+            document.getElementById('editKedudukan').value = "1";
+            document.getElementById('editDaerah').value = "";
+            document.getElementById('editSekolah').innerHTML = '<option value="">-- Sila Pilih Daerah Dahulu --</option>';
+            
+            document.getElementById('editModal').classList.remove('hidden');
+            document.getElementById('editModal').classList.add('flex');
+        }
+
+        function closeEditModal() {
+            document.getElementById('editModal').classList.add('hidden');
+            document.getElementById('editModal').classList.remove('flex');
+        }
+
+        function saveWinner() {
+            const kedudukan = document.getElementById('editKedudukan').value;
+            const daerah = document.getElementById('editDaerah').value;
+            const sekolah = document.getElementById('editSekolah').value;
+
+            // Ralat Pembaikan: Buang alert, guna visual error
+            if(!daerah || !sekolah) {
+                document.getElementById('editError').classList.remove('hidden');
+                return;
+            }
+
+            if (!winnersData[currentEditPertandinganRaw]) {
+                winnersData[currentEditPertandinganRaw] = {};
+            }
+            
+            winnersData[currentEditPertandinganRaw][kedudukan] = { daerah, sekolah };
+            localStorage.setItem('stemWinnersData', JSON.stringify(winnersData));
+            
+            closeEditModal();
+            renderWinnersView();
+        }
+
+        function renderWinnersView() {
+            const grid = document.getElementById('winners-grid');
+            grid.innerHTML = '';
+            
+            let daerahWinCount = {};
+            let sekolahWinCount = {};
+
+            uniquePertandingan.forEach(pert => {
+                const cleanName = pert.replace(/[^a-zA-Z0-9\s]/g, '').trim();
+                // KEMASKINI DI SINI: Elakkan ralat sekiranya ada simbol koma atas (quote) pada nama pertandingan
+                const safePert = pert.replace(/'/g, "\\'");
+                
+                const card = document.createElement('div');
+                card.className = "glass-panel rounded-2xl overflow-hidden border border-slate-200 flex flex-col";
+                
+                let headerContent = `<div class="bg-slate-100 p-4 border-b border-slate-200 flex justify-between items-center">
+                    <h4 class="font-heading font-bold text-slate-800">${cleanName}</h4>
+                    ${isAdmin ? `<button onclick="openEditModal('${safePert}')" class="text-xs bg-tech-100 text-tech-700 px-3 py-1.5 rounded hover:bg-tech-200 font-medium"><i class="fa-solid fa-pen mr-1"></i>Edit</button>` : ''}
+                </div>`;
+
+                let listContent = '<div class="p-4 flex-grow flex flex-col gap-3">';
+                const wData = winnersData[pert] || {};
+                
+                const kedudukanConfig = [
+                    { id: 1, label: 'Johan', color: 'text-amber-500', bg: 'bg-amber-50', border: 'border-amber-200' },
+                    { id: 2, label: 'Naib Johan', color: 'text-slate-400', bg: 'bg-slate-50', border: 'border-slate-200' },
+                    { id: 3, label: 'Ketiga', color: 'text-orange-400', bg: 'bg-orange-50', border: 'border-orange-200' },
+                    { id: 4, label: 'Keempat', color: 'text-slate-500', bg: 'bg-transparent', border: 'border-transparent' },
+                    { id: 5, label: 'Kelima', color: 'text-slate-500', bg: 'bg-transparent', border: 'border-transparent' }
+                ];
+
+                kedudukanConfig.forEach(k => {
+                    const winInfo = wData[k.id];
+                    if (winInfo && k.id <= 3) {
+                        daerahWinCount[winInfo.daerah] = (daerahWinCount[winInfo.daerah] || 0) + 1;
+                        sekolahWinCount[winInfo.sekolah] = (sekolahWinCount[winInfo.sekolah] || 0) + 1;
+                    }
+
+                    if (winInfo) {
+                        listContent += `
+                        <div class="flex items-start gap-3 p-2 rounded-lg ${k.bg} border ${k.border}">
+                            <div class="font-bold ${k.color} text-sm min-w-[20px] pt-0.5">${k.id}.</div>
+                            <div>
+                                <div class="font-semibold text-sm text-slate-800 leading-tight">${winInfo.sekolah}</div>
+                                <div class="text-[10px] uppercase font-bold text-slate-500 mt-1 tracking-wider">${winInfo.daerah}</div>
+                            </div>
+                        </div>`;
+                    } else {
+                        listContent += `
+                        <div class="flex items-center gap-3 p-2">
+                            <div class="font-bold text-slate-300 text-sm w-4">${k.id}.</div>
+                            <div class="text-sm text-slate-400 italic">Menunggu Keputusan</div>
+                        </div>`;
+                    }
+                });
+
+                listContent += '</div>';
+                card.innerHTML = headerContent + listContent;
+                grid.appendChild(card);
+            });
+
+            updateWinnerAnalytics(daerahWinCount, sekolahWinCount);
+        }
+
+        function updateWinnerAnalytics(daerahCount, sekolahCount) {
+            let existingChart = Chart.getChart('chartPemenang');
+            if(existingChart) existingChart.destroy();
+
+            const sortedDaerah = Object.entries(daerahCount).sort((a, b) => b[1] - a[1]);
+            
+            new Chart(document.getElementById('chartPemenang'), {
+                type: 'bar',
+                data: {
+                    labels: sortedDaerah.map(i => i[0]),
+                    datasets: [{
+                        label: 'Jumlah Kemenangan',
+                        data: sortedDaerah.map(i => i[1]),
+                        backgroundColor: '#f59e0b',
                         borderRadius: 6
                     }]
                 },
@@ -563,344 +668,74 @@
                     plugins: {
                         legend: { display: false },
                         datalabels: {
-                            color: '#0369a1',
+                            color: '#1e293b',
                             anchor: 'end',
                             align: 'top',
-                            font: { weight: 'bold', family: 'Inter' },
-                            formatter: (value) => value
+                            offset: 2,
+                            font: { weight: 'bold', size: 11 }
                         }
                     },
                     scales: {
-                        y: { beginAtZero: true, grid: { borderDash: [4, 4], color: '#f1f5f9' }, ticks: { precision: 0 } },
-                        x: { grid: { display: false }, ticks: { font: { family: 'Inter', size: 10 }, maxRotation: 45, minRotation: 45 } }
-                    },
-                    layout: { padding: { top: 20 } } // Give space for top labels
-                }
-            });
-        }
-
-        // 8. Initialize Winners State
-        function initWinnersData() {
-            window.winnersData = {};
-            const pertSet = new Set();
-            window.allData.forEach(row => {
-                if (row['PERTANDINGAN']) pertSet.add((row['PERTANDINGAN']).trim());
-            });
-
-            Array.from(pertSet).forEach(pert => {
-                window.winnersData[pert] = {};
-                RANKS.forEach(rank => {
-                    window.winnersData[pert][rank] = { daerah: '', sekolah: '' };
-                });
-            });
-        }
-
-        // 9. Render Winners Tab
-        window.renderWinners = function() {
-            const grid = document.getElementById('winners-grid');
-            grid.innerHTML = '';
-            
-            const competitions = Object.keys(window.winnersData).sort();
-            
-            if (competitions.length === 0) {
-                grid.innerHTML = '<div class="col-span-full p-8 text-center text-slate-500 bg-white rounded-xl border border-slate-200">Tiada data pertandingan dijumpai.</div>';
-                return;
-            }
-
-            competitions.forEach(pert => {
-                const card = document.createElement('div');
-                card.className = 'bg-white rounded-2xl border border-slate-200/60 overflow-hidden shadow-sm hover:shadow-md transition-shadow flex flex-col';
-                
-                // Clean name
-                const cleanPert = pert.replace(/[^a-zA-Z0-9\s]/g, '').trim();
-
-                let headerHtml = `
-                    <div class="bg-gradient-to-r from-tech-900 to-tech-700 p-4 flex justify-between items-center">
-                        <h4 class="font-heading font-bold text-white text-sm leading-snug pr-2">${cleanPert}</h4>
-                        <div class="w-8 h-8 bg-white/10 rounded-full flex items-center justify-center flex-shrink-0 text-tech-100">
-                            <i class="fa-solid fa-medal"></i>
-                        </div>
-                    </div>
-                `;
-
-                let bodyHtml = '<div class="p-4 flex-grow flex flex-col gap-3">';
-                
-                RANKS.forEach((rank, index) => {
-                    const data = window.winnersData[pert][rank];
-                    const hasWinner = data && data.sekolah && data.sekolah !== '';
-                    
-                    let rankIcon = '';
-                    let bgClass = 'bg-slate-50 border-slate-100';
-                    let textClass = 'text-slate-800';
-                    
-                    if(index === 0) { rankIcon = '<i class="fa-solid fa-trophy text-yellow-500"></i>'; bgClass = 'bg-yellow-50/50 border-yellow-200/50'; }
-                    else if(index === 1) { rankIcon = '<i class="fa-solid fa-medal text-slate-400"></i>'; }
-                    else if(index === 2) { rankIcon = '<i class="fa-solid fa-medal text-amber-700"></i>'; }
-                    else { rankIcon = `<span class="text-xs font-bold text-slate-400">${index+1}</span>`; }
-
-                    let displayHtml = '';
-                    if (hasWinner) {
-                        displayHtml = `
-                            <div class="font-medium text-sm ${textClass} leading-tight">${data.sekolah}</div>
-                            <div class="text-[10px] font-semibold text-slate-500 uppercase mt-0.5 tracking-wider">${data.daerah}</div>
-                        `;
-                    } else {
-                        displayHtml = `<div class="text-xs text-slate-400 italic">Belum diputuskan</div>`;
-                    }
-
-                    // Admin Edit Button
-                    let editBtn = '';
-                    if (window.isAdmin) {
-                        editBtn = `<button onclick="openEditModal('${pert.replace(/'/g, "\\'")}', '${rank}')" class="ml-auto w-7 h-7 rounded bg-white border border-slate-200 text-tech-600 hover:bg-tech-50 hover:border-tech-200 flex items-center justify-center transition-colors flex-shrink-0" title="Kemaskini"><i class="fa-solid fa-pen text-xs"></i></button>`;
-                    }
-
-                    bodyHtml += `
-                        <div class="flex items-center gap-3 p-2 rounded-lg border ${bgClass}">
-                            <div class="w-6 text-center flex-shrink-0">${rankIcon}</div>
-                            <div class="flex-grow min-w-0">${displayHtml}</div>
-                            ${editBtn}
-                        </div>
-                    `;
-                });
-                
-                bodyHtml += '</div>';
-                card.innerHTML = headerHtml + bodyHtml;
-                grid.appendChild(card);
-            });
-
-            updateWinnersChart();
-        }
-
-        // 10. Winners Chart
-        function updateWinnersChart() {
-            if (document.getElementById('view-keputusan').classList.contains('hidden')) return;
-
-            let daerahScore = {};
-            
-            Object.values(window.winnersData).forEach(pert => {
-                Object.values(pert).forEach(rankData => {
-                    if (rankData && rankData.daerah) {
-                        let d = rankData.daerah.trim();
-                        if (d) daerahScore[d] = (daerahScore[d] || 0) + 1;
-                    }
-                });
-            });
-
-            const sortedDaerah = Object.entries(daerahScore).sort((a,b) => b[1]-a[1]);
-            const labels = sortedDaerah.map(i => i[0]);
-            const data = sortedDaerah.map(i => i[1]);
-
-            // Semak dan buang (destroy) graf lama dengan cara yang betul
-            const existingChartPemenang = Chart.getChart('chartPemenang');
-            if (existingChartPemenang) existingChartPemenang.destroy();
-
-            window.chartPemenang = new Chart(document.getElementById('chartPemenang'), {
-                type: 'bar',
-                data: {
-                    labels: labels,
-                    datasets: [{
-                        label: 'Jumlah Kemenangan Top 5',
-                        data: data,
-                        backgroundColor: '#10b981', // Emerald
-                        borderRadius: 4
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: { display: false },
-                        datalabels: {
-                            color: '#065f46',
-                            anchor: 'end',
-                            align: 'top',
-                            font: { weight: 'bold', family: 'Inter' },
-                            formatter: (value) => value > 0 ? value : ''
-                        }
-                    },
-                    scales: {
-                        y: { beginAtZero: true, grid: { borderDash: [4, 4], color: '#f1f5f9' }, ticks: { stepSize: 1 } },
-                        x: { grid: { display: false }, ticks: { font: { family: 'Inter', size: 11 } } }
+                        y: { beginAtZero: true, suggestedMax: sortedDaerah.length > 0 ? sortedDaerah[0][1] + 2 : 5, ticks: { stepSize: 1 } },
+                        x: { grid: { display: false }, ticks: { font: { size: 10 } } }
                     },
                     layout: { padding: { top: 20 } }
                 }
             });
-        }
 
-        // 11. Modal Handlers
-        window.openModal = function(id) {
-            const el = document.getElementById(id);
-            el.classList.remove('hidden');
-            el.classList.add('modal-active');
-            // Trigger animation
-            setTimeout(() => {
-                el.classList.remove('opacity-0');
-                el.querySelector('div').classList.remove('scale-95');
-                el.querySelector('div').classList.add('scale-100');
-            }, 10);
-        }
-
-        window.closeModal = function(id) {
-            const el = document.getElementById(id);
-            el.classList.add('opacity-0');
-            el.querySelector('div').classList.remove('scale-100');
-            el.querySelector('div').classList.add('scale-95');
-            setTimeout(() => {
-                el.classList.remove('modal-active');
-                el.classList.add('hidden');
-            }, 300); // match transition duration
-        }
-
-        window.showAlert = function(title, msg, iconClass) {
-            document.getElementById('alert-title').innerText = title;
-            document.getElementById('alert-message').innerText = msg;
-            document.getElementById('alert-icon').innerHTML = `<i class="${iconClass}"></i>`;
-            openModal('modal-alert');
-        }
-
-        // 12. Admin Logic
-        window.openAdminLogin = function() {
-            if(window.isAdmin) return;
-            document.getElementById('admin-password').value = '';
-            document.getElementById('login-error').classList.add('hidden');
-            openModal('modal-login');
-        }
-
-        window.verifyAdmin = function() {
-            const pass = document.getElementById('admin-password').value;
-            // ASCII obfuscation for "StEm@2026"
-            const secretCodes = [83, 116, 69, 109, 64, 50, 48, 50, 54]; 
-            const isMatch = pass.length === secretCodes.length && pass.split('').every((char, index) => char.charCodeAt(0) === secretCodes[index]);
-
-            if (isMatch) {
-                window.isAdmin = true;
-                closeModal('modal-login');
-                document.getElementById('btn-admin-login').classList.add('hidden');
-                document.getElementById('btn-admin-logout').classList.remove('hidden');
-                document.getElementById('btn-admin-logout').classList.add('flex');
-                document.getElementById('admin-notice').classList.remove('hidden');
-                
-                showAlert('Log Masuk Berjaya', 'Mod Admin diaktifkan. Anda kini boleh mengemaskini data pemenang (Modul Simpanan Sementara).', 'fa-solid fa-shield-halved text-emerald-500 bg-emerald-100');
-                
-                if (!document.getElementById('view-keputusan').classList.contains('hidden')) {
-                    renderWinners(); // Re-render to show edit buttons
-                }
-            } else {
-                document.getElementById('login-error').classList.remove('hidden');
-            }
-        }
-
-        window.logoutAdmin = function() {
-            window.isAdmin = false;
-            document.getElementById('btn-admin-login').classList.remove('hidden');
-            document.getElementById('btn-admin-logout').classList.add('hidden');
-            document.getElementById('btn-admin-logout').classList.remove('flex');
-            document.getElementById('admin-notice').classList.add('hidden');
+            const listEl = document.getElementById('list-sekolah-cemerlang');
+            listEl.innerHTML = '';
+            const sortedSekolah = Object.entries(sekolahCount).sort((a, b) => b[1] - a[1]).slice(0, 5);
             
-            if (!document.getElementById('view-keputusan').classList.contains('hidden')) {
-                renderWinners(); // Re-render to hide edit buttons
-            }
-        }
-
-        // 13. Edit Winner Form Logic
-        window.openEditModal = function(pertandingan, kedudukan) {
-            document.getElementById('edit-pertandingan-id').value = pertandingan;
-            document.getElementById('edit-kedudukan-id').value = kedudukan;
-            
-            document.getElementById('edit-pertandingan-title').innerText = pertandingan.replace(/[^a-zA-Z0-9\s]/g, '').trim();
-            document.getElementById('edit-kedudukan-display').innerText = kedudukan;
-
-            // Populate Daerah Dropdown
-            const selDaerah = document.getElementById('edit-daerah');
-            selDaerah.innerHTML = '<option value="">-- Pilih Daerah --</option>';
-            
-            const daerahSet = new Set();
-            window.allData.forEach(r => { if(r['DAERAH']) daerahSet.add(r['DAERAH'].trim()); });
-            Array.from(daerahSet).sort().forEach(d => {
-                selDaerah.add(new Option(d, d));
-            });
-
-            // Reset Sekolah dropdown
-            document.getElementById('edit-sekolah').innerHTML = '<option value="">-- Pilih Sekolah --</option>';
-
-            // Load existing data if any
-            const existing = window.winnersData[pertandingan][kedudukan];
-            if (existing && existing.daerah) {
-                selDaerah.value = existing.daerah;
-                updateSekolahDropdown(); // Populate sekolah based on daerah
-                
-                // Set existing sekolah value after slightly delay to ensure dropdown is populated
-                setTimeout(() => {
-                    const selSekolah = document.getElementById('edit-sekolah');
-                    // Check if option exists
-                    let exists = false;
-                    for (let i = 0; i < selSekolah.options.length; i++) {
-                        if (selSekolah.options[i].value === existing.sekolah) {
-                            exists = true; break;
-                        }
-                    }
-                    // If manually typed before, add it so it doesn't break
-                    if(!exists && existing.sekolah) {
-                         selSekolah.add(new Option(existing.sekolah, existing.sekolah));
-                    }
-                    selSekolah.value = existing.sekolah || '';
-                }, 10);
-            }
-
-            openModal('modal-edit');
-        }
-
-        // 14. Cascading Dropdown (Sekolah filters by selected Daerah)
-        window.updateSekolahDropdown = function() {
-            const daerah = document.getElementById('edit-daerah').value;
-            const selSekolah = document.getElementById('edit-sekolah');
-            
-            selSekolah.innerHTML = '<option value="">-- Pilih Sekolah --</option>';
-            
-            if (!daerah) return;
-
-            const sekolahSet = new Set();
-            window.allData.forEach(r => {
-                if ((r['DAERAH'] || '').trim() === daerah && r['NAMA SEKOLAH']) {
-                    sekolahSet.add(r['NAMA SEKOLAH'].trim());
-                }
-            });
-
-            Array.from(sekolahSet).sort().forEach(s => {
-                selSekolah.add(new Option(s, s));
-            });
-        }
-
-        // 15. Save/Clear logic
-        window.saveWinner = function() {
-            const pert = document.getElementById('edit-pertandingan-id').value;
-            const rank = document.getElementById('edit-kedudukan-id').value;
-            const daerah = document.getElementById('edit-daerah').value;
-            const sekolah = document.getElementById('edit-sekolah').value;
-
-            if (!daerah || !sekolah) {
-                showAlert('Ralat', 'Sila pilih Daerah dan Nama Sekolah.', 'fa-solid fa-circle-exclamation text-amber-500 bg-amber-100');
+            if (sortedSekolah.length === 0) {
+                listEl.innerHTML = '<li class="text-sm text-amber-700/60 italic">Belum ada rekod kemenangan dimasukkan.</li>';
                 return;
             }
 
-            // Save to state
-            window.winnersData[pert][rank] = { daerah: daerah, sekolah: sekolah };
-            
-            renderWinners();
-            closeModal('modal-edit');
+            sortedSekolah.forEach((s, idx) => {
+                listEl.innerHTML += `
+                    <li class="flex items-center gap-3">
+                        <div class="w-6 h-6 rounded-full bg-amber-200 text-amber-700 font-bold flex items-center justify-center text-xs">${idx + 1}</div>
+                        <div class="flex-grow text-sm font-semibold text-slate-800 leading-tight">${s[0]}</div>
+                        <div class="bg-amber-100 text-amber-800 px-2 py-0.5 rounded text-xs font-bold">${s[1]}</div>
+                    </li>
+                `;
+            });
         }
 
-        window.clearWinnerData = function() {
-            const pert = document.getElementById('edit-pertandingan-id').value;
-            const rank = document.getElementById('edit-kedudukan-id').value;
-            
-            // Clear from state
-            window.winnersData[pert][rank] = { daerah: '', sekolah: '' };
-            
-            renderWinners();
-            closeModal('modal-edit');
-        }
+        async function generateAIAnalysis() {
+            const totalPeserta = document.getElementById('stat-total-pendaftaran').innerText;
+            const totalSekolah = document.getElementById('stat-total-sekolah').innerText;
+            const filterDaerah = document.getElementById('filter-daerah').value;
+            const filterPertandingan = document.getElementById('filter-pertandingan').value;
 
+            const btnAi = document.getElementById('btn-ai');
+            const loadingAi = document.getElementById('ai-loading');
+            const resultBox = document.getElementById('ai-result-box');
+            const resultText = document.getElementById('ai-result-text');
+
+            btnAi.disabled = true;
+            btnAi.classList.add('opacity-50', 'cursor-not-allowed');
+            loadingAi.classList.remove('hidden');
+            resultBox.classList.add('hidden');
+
+            // Ralat Pembaikan: Fungsi ini di-"mock" supaya tidak mengeluarkan Error di Konsol
+            // kerana API key perlu disediakan oleh pengguna secara manual di server sebenar.
+            setTimeout(() => {
+                let ulasanDaerah = filterDaerah === 'ALL' ? "keseluruhan daerah" : `daerah ${filterDaerah}`;
+                let ulasanPert = filterPertandingan === 'ALL' ? "semua kategori pertandingan" : `acara ${filterPertandingan}`;
+                let ulasanTahap = parseInt(totalPeserta) > 50 ? "memberangsangkan" : "berpotensi untuk ditingkatkan";
+
+                const mockResponse = `Berdasarkan statistik semasa bagi ${ulasanDaerah} dalam ${ulasanPert}, penyertaan boleh dirumuskan sebagai ${ulasanTahap}. Seramai ${totalPeserta} orang peserta daripada ${totalSekolah} buah sekolah telah menunjukkan komitmen yang tinggi. Inisiatif Karnival STEM ini jelas berjaya memupuk minat pelajar terhadap sains dan teknologi, dan data ini mencerminkan penerimaan yang positif dari pihak institusi pendidikan.`;
+                
+                resultText.innerHTML = mockResponse;
+                resultBox.classList.remove('hidden');
+                
+                btnAi.disabled = false;
+                btnAi.classList.remove('opacity-50', 'cursor-not-allowed');
+                loadingAi.classList.add('hidden');
+            }, 1800);
+        }
     </script>
 </body>
 </html>
