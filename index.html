@@ -112,10 +112,15 @@
                 <div class="bg-white p-4 border-b border-slate-100 flex flex-col md:flex-row gap-4 justify-between items-center">
                     <h3 class="font-heading font-semibold text-lg text-slate-700">Senarai Pendaftaran (<span id="table-count">0</span>)</h3>
                     <div class="flex flex-col sm:flex-row gap-2 w-full md:w-auto">
-                        <select id="filter-daerah" class="bg-slate-50 border border-slate-200 text-slate-700 text-sm rounded-lg focus:ring-tech-500 focus:border-tech-500 block w-full md:w-40 p-2.5 outline-none">
+                        <select id="filter-peringkat" class="bg-slate-50 border border-slate-200 text-slate-700 text-sm rounded-lg focus:ring-tech-500 focus:border-tech-500 block w-full sm:w-40 p-2.5 outline-none">
+                            <option value="ALL">Semua Peringkat</option>
+                            <option value="SEKOLAH RENDAH">Sekolah Rendah</option>
+                            <option value="SEKOLAH MENENGAH">Sekolah Menengah</option>
+                        </select>
+                        <select id="filter-daerah" class="bg-slate-50 border border-slate-200 text-slate-700 text-sm rounded-lg focus:ring-tech-500 focus:border-tech-500 block w-full sm:w-40 p-2.5 outline-none">
                             <option value="ALL">Semua Daerah</option>
                         </select>
-                        <select id="filter-pertandingan" class="bg-slate-50 border border-slate-200 text-slate-700 text-sm rounded-lg focus:ring-tech-500 focus:border-tech-500 block w-full md:w-48 p-2.5 outline-none">
+                        <select id="filter-pertandingan" class="bg-slate-50 border border-slate-200 text-slate-700 text-sm rounded-lg focus:ring-tech-500 focus:border-tech-500 block w-full sm:w-48 p-2.5 outline-none">
                             <option value="ALL">Semua Pertandingan</option>
                         </select>
                     </div>
@@ -271,6 +276,7 @@
         let allData = [];
         let uniqueDaerah = [];
         let uniquePertandingan = [];
+        let uniquePeringkat = [];
         let isAdmin = false;
         
         // Pangkalan Data Pemenang Tempatan (Untuk Mockup)
@@ -278,6 +284,7 @@
         let currentEditPertandinganRaw = "";
 
         // Tonton Perubahan Filter
+        document.getElementById('filter-peringkat').addEventListener('change', processDashboard);
         document.getElementById('filter-daerah').addEventListener('change', processDashboard);
         document.getElementById('filter-pertandingan').addEventListener('change', processDashboard);
 
@@ -316,10 +323,32 @@
         }
 
         function processDashboard() {
+            const selPeringkat = document.getElementById('filter-peringkat').value;
             const selDaerah = document.getElementById('filter-daerah').value;
             const selPert = document.getElementById('filter-pertandingan').value;
             
             let filtered = allData;
+            
+            // Penapisan Pintar untuk Peringkat
+            if (selPeringkat !== 'ALL') {
+                filtered = filtered.filter(row => {
+                    // Kesan pelbagai ejaan lajur Peringkat/Kategori
+                    const rawPeringkat = row['PERINGKAT'] || row['KATEGORI'] || row['PERINGKAT PERTANDINGAN'] || row['KATEGORI PERTANDINGAN'] || '';
+                    const peringkatAsal = rawPeringkat.toUpperCase();
+                    
+                    // Fallback: Semak jika nama peringkat ada tertulis pada nama pertandingan
+                    const pertAsal = (row['PERTANDINGAN'] || '').toUpperCase();
+
+                    if (selPeringkat === 'SEKOLAH RENDAH') {
+                        return peringkatAsal.includes('RENDAH') || peringkatAsal === 'SR' || pertAsal.includes('RENDAH') || pertAsal.includes(' SR');
+                    }
+                    if (selPeringkat === 'SEKOLAH MENENGAH') {
+                        return peringkatAsal.includes('MENENGAH') || peringkatAsal === 'SM' || pertAsal.includes('MENENGAH') || pertAsal.includes(' SM');
+                    }
+                    return true;
+                });
+            }
+
             if (selDaerah !== 'ALL') filtered = filtered.filter(row => row['DAERAH'] === selDaerah);
             if (selPert !== 'ALL') filtered = filtered.filter(row => row['PERTANDINGAN'] === selPert);
             
@@ -375,20 +404,24 @@
                 }
 
                 const namaPertandingan = (row['PERTANDINGAN'] || '').replace(/[^a-zA-Z0-9\s]/g, '').trim();
+                
+                // Papar lencana peringkat jika ia wujud menggunakan pelbagai tajuk kemungkinan
+                const rawPeringkat = row['PERINGKAT'] || row['KATEGORI'] || row['PERINGKAT PERTANDINGAN'] || row['KATEGORI PERTANDINGAN'] || '';
+                const peringkatBadge = rawPeringkat ? `<span class="px-2 py-0.5 bg-slate-100 text-slate-500 rounded text-[10px] font-bold uppercase tracking-wider">${rawPeringkat}</span>` : '';
 
                 const tr = document.createElement('tr');
                 tr.className = 'hover:bg-slate-50/80 transition-colors';
                 
                 tr.innerHTML = `
                     <td class="px-6 py-4 border-b border-slate-100 font-medium text-slate-800 align-top">
-                        <div class="mb-1.5 whitespace-normal leading-snug">${namaPertandingan}</div>
-                        <span class="px-2 py-0.5 bg-slate-100 text-slate-500 rounded text-[10px] font-bold uppercase tracking-wider">${row['PERINGKAT'] || ''}</span>
+                        <div class="whitespace-normal leading-snug">${namaPertandingan}</div>
                     </td>
                     <td class="px-6 py-4 border-b border-slate-100 align-top">
                         <span class="px-2.5 py-1 bg-tech-50 text-tech-700 rounded-md text-xs font-semibold whitespace-nowrap">${row['DAERAH'] || ''}</span>
                     </td>
                     <td class="px-6 py-4 border-b border-slate-100 font-medium text-slate-700 align-top">
-                        <div class="whitespace-normal leading-relaxed text-sm">${row['NAMA SEKOLAH'] || ''}</div>
+                        <div class="whitespace-normal leading-relaxed text-sm mb-1.5">${row['NAMA SEKOLAH'] || ''}</div>
+                        ${peringkatBadge}
                     </td>
                     <td class="px-6 py-4 border-b border-slate-100 align-top">${pStr}</td>
                     <td class="px-6 py-4 border-b border-slate-100 text-sm text-slate-800 align-top font-medium">${guruStr}</td>
