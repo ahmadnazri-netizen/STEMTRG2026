@@ -201,9 +201,9 @@
                 </div>
             </div>
 
-            <!-- Grid Pemenang -->
-            <div id="winners-grid" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-                <!-- Kad Pemenang dijana melalui JS -->
+            <!-- Kontena Pemenang Berasingan Kategori -->
+            <div id="winners-container" class="space-y-10">
+                <!-- Seksyen Kategori dijana melalui JS -->
             </div>
         </div>
 
@@ -276,12 +276,14 @@
         let allData = [];
         let uniqueDaerah = [];
         let uniquePertandingan = [];
-        let uniquePeringkat = [];
+        let uniqueCompetitions = []; // Digunakan untuk senarai pemenang berasaskan Kategori
         let isAdmin = false;
         
         // Pangkalan Data Pemenang Tempatan (Untuk Mockup)
         let winnersData = JSON.parse(localStorage.getItem('stemWinnersData')) || {};
+        let currentEditCompId = ""; 
         let currentEditPertandinganRaw = "";
+        let currentEditCat = "";
 
         // Tonton Perubahan Filter
         document.getElementById('filter-peringkat').addEventListener('change', processDashboard);
@@ -310,6 +312,27 @@
         function initFilters() {
             uniqueDaerah = [...new Set(allData.map(item => item['DAERAH']).filter(Boolean))].sort();
             uniquePertandingan = [...new Set(allData.map(item => item['PERTANDINGAN']).filter(Boolean))].sort();
+
+            // Sediakan senarai pertandingan berserta Kategori untuk Tab Keputusan
+            let compMap = new Map();
+            allData.forEach(row => {
+                const pert = row['PERTANDINGAN'];
+                if(!pert) return;
+                
+                const rawPeringkat = row['PERINGKAT'] || row['KATEGORI'] || row['PERINGKAT PERTANDINGAN'] || row['KATEGORI PERTANDINGAN'] || '';
+                const pUpper = rawPeringkat.toUpperCase();
+                const ptUpper = pert.toUpperCase();
+                
+                let cat = 'UMUM';
+                if (pUpper.includes('RENDAH') || pUpper === 'SR' || ptUpper.includes('RENDAH') || ptUpper.includes(' SR')) cat = 'RENDAH';
+                else if (pUpper.includes('MENENGAH') || pUpper === 'SM' || ptUpper.includes('MENENGAH') || ptUpper.includes(' SM')) cat = 'MENENGAH';
+
+                let id = cat + '::' + pert;
+                if(!compMap.has(id)) {
+                    compMap.set(id, { id: id, pert: pert, cat: cat });
+                }
+            });
+            uniqueCompetitions = Array.from(compMap.values()).sort((a,b) => a.pert.localeCompare(b.pert));
 
             const dFilter = document.getElementById('filter-daerah');
             const pFilter = document.getElementById('filter-pertandingan');
@@ -560,16 +583,25 @@
             renderWinnersView();
         }
 
-        // --- Logik Dropdown Sekolah Ditapis Mengikut Pertandingan ---
+        // --- Logik Dropdown Sekolah Ditapis Mengikut Pertandingan & Kategori ---
         document.getElementById('editDaerah').addEventListener('change', function() {
             const selectedDaerah = this.value;
             const sekolahSelect = document.getElementById('editSekolah');
             sekolahSelect.innerHTML = '<option value="">-- Pilih Sekolah --</option>';
 
             if (selectedDaerah && currentEditPertandinganRaw) {
-                // KEMASKINI DI SINI: Guna allData sahaja, bukan window.allData
                 const filteredSekolah = allData.filter(row => {
-                    return (row['DAERAH'] === selectedDaerah) && (row['PERTANDINGAN'] === currentEditPertandinganRaw);
+                    const rawPeringkat = row['PERINGKAT'] || row['KATEGORI'] || row['PERINGKAT PERTANDINGAN'] || row['KATEGORI PERTANDINGAN'] || '';
+                    const pUpper = rawPeringkat.toUpperCase();
+                    const ptUpper = (row['PERTANDINGAN'] || '').toUpperCase();
+                    
+                    let rowCat = 'UMUM';
+                    if (pUpper.includes('RENDAH') || pUpper === 'SR' || ptUpper.includes('RENDAH') || ptUpper.includes(' SR')) rowCat = 'RENDAH';
+                    else if (pUpper.includes('MENENGAH') || pUpper === 'SM' || ptUpper.includes('MENENGAH') || ptUpper.includes(' SM')) rowCat = 'MENENGAH';
+
+                    return (row['DAERAH'] === selectedDaerah) && 
+                           (row['PERTANDINGAN'] === currentEditPertandinganRaw) &&
+                           (rowCat === currentEditCat);
                 });
 
                 const senaraiSekolahUnik = [...new Set(filteredSekolah.map(item => item['NAMA SEKOLAH']).filter(Boolean))];
@@ -587,10 +619,14 @@
             }
         });
 
-        function openEditModal(pertandinganAsal) {
+        function openEditModal(compId, pertandinganAsal, cat) {
+            currentEditCompId = compId;
             currentEditPertandinganRaw = pertandinganAsal; 
+            currentEditCat = cat;
+
             const cleanName = pertandinganAsal.replace(/[^a-zA-Z0-9\s]/g, '').trim();
-            document.getElementById('modalEditTitle').innerText = "Edit Pemenang: " + cleanName;
+            const catLabel = cat === 'RENDAH' ? '(Sekolah Rendah)' : cat === 'MENENGAH' ? '(Sekolah Menengah)' : '';
+            document.getElementById('modalEditTitle').innerText = `Edit Pemenang: ${cleanName} ${catLabel}`;
             
             document.getElementById('editError').classList.add('hidden');
             document.getElementById('editKedudukan').value = "1";
@@ -617,11 +653,11 @@
                 return;
             }
 
-            if (!winnersData[currentEditPertandinganRaw]) {
-                winnersData[currentEditPertandinganRaw] = {};
+            if (!winnersData[currentEditCompId]) {
+                winnersData[currentEditCompId] = {};
             }
             
-            winnersData[currentEditPertandinganRaw][kedudukan] = { daerah, sekolah };
+            winnersData[currentEditCompId][kedudukan] = { daerah, sekolah };
             localStorage.setItem('stemWinnersData', JSON.stringify(winnersData));
             
             closeEditModal();
@@ -629,64 +665,92 @@
         }
 
         function renderWinnersView() {
-            const grid = document.getElementById('winners-grid');
-            grid.innerHTML = '';
+            const container = document.getElementById('winners-container');
+            container.innerHTML = '';
             
             let daerahWinCount = {};
             let sekolahWinCount = {};
 
-            uniquePertandingan.forEach(pert => {
-                const cleanName = pert.replace(/[^a-zA-Z0-9\s]/g, '').trim();
-                // KEMASKINI DI SINI: Elakkan ralat sekiranya ada simbol koma atas (quote) pada nama pertandingan
-                const safePert = pert.replace(/'/g, "\\'");
-                
-                const card = document.createElement('div');
-                card.className = "glass-panel rounded-2xl overflow-hidden border border-slate-200 flex flex-col";
-                
-                let headerContent = `<div class="bg-slate-100 p-4 border-b border-slate-200 flex justify-between items-center">
-                    <h4 class="font-heading font-bold text-slate-800">${cleanName}</h4>
-                    ${isAdmin ? `<button onclick="openEditModal('${safePert}')" class="text-xs bg-tech-100 text-tech-700 px-3 py-1.5 rounded hover:bg-tech-200 font-medium"><i class="fa-solid fa-pen mr-1"></i>Edit</button>` : ''}
-                </div>`;
+            // Definisi Seksyen Kategori
+            const categories = [
+                { id: 'RENDAH', title: 'Kategori Sekolah Rendah', icon: 'fa-child-reaching', color: 'text-emerald-600', bg: 'bg-emerald-50', border: 'border-emerald-200' },
+                { id: 'MENENGAH', title: 'Kategori Sekolah Menengah', icon: 'fa-user-graduate', color: 'text-blue-600', bg: 'bg-blue-50', border: 'border-blue-200' },
+                { id: 'UMUM', title: 'Kategori Umum / Terbuka', icon: 'fa-users', color: 'text-purple-600', bg: 'bg-purple-50', border: 'border-purple-200' }
+            ];
 
-                let listContent = '<div class="p-4 flex-grow flex flex-col gap-3">';
-                const wData = winnersData[pert] || {};
-                
-                const kedudukanConfig = [
-                    { id: 1, label: 'Johan', color: 'text-amber-500', bg: 'bg-amber-50', border: 'border-amber-200' },
-                    { id: 2, label: 'Naib Johan', color: 'text-slate-400', bg: 'bg-slate-50', border: 'border-slate-200' },
-                    { id: 3, label: 'Ketiga', color: 'text-orange-400', bg: 'bg-orange-50', border: 'border-orange-200' },
-                    { id: 4, label: 'Keempat', color: 'text-slate-500', bg: 'bg-transparent', border: 'border-transparent' },
-                    { id: 5, label: 'Kelima', color: 'text-slate-500', bg: 'bg-transparent', border: 'border-transparent' }
-                ];
+            categories.forEach(categoryMap => {
+                const comps = uniqueCompetitions.filter(c => c.cat === categoryMap.id);
+                if (comps.length === 0) return;
 
-                kedudukanConfig.forEach(k => {
-                    const winInfo = wData[k.id];
-                    if (winInfo && k.id <= 3) {
-                        daerahWinCount[winInfo.daerah] = (daerahWinCount[winInfo.daerah] || 0) + 1;
-                        sekolahWinCount[winInfo.sekolah] = (sekolahWinCount[winInfo.sekolah] || 0) + 1;
-                    }
+                // Bina Pengepala Seksyen (Section Header)
+                const section = document.createElement('div');
+                section.className = "mb-8 bg-white/40 p-6 rounded-3xl border border-slate-100 shadow-sm";
+                section.innerHTML = `
+                    <div class="flex items-center gap-3 mb-6 pb-4 border-b border-slate-200">
+                        <div class="w-12 h-12 rounded-xl ${categoryMap.bg} ${categoryMap.color} flex items-center justify-center text-2xl border ${categoryMap.border} shadow-sm">
+                            <i class="fa-solid ${categoryMap.icon}"></i>
+                        </div>
+                        <h3 class="text-2xl font-heading font-bold text-slate-800 tracking-tight">${categoryMap.title}</h3>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6" id="grid-${categoryMap.id}"></div>
+                `;
+                container.appendChild(section);
 
-                    if (winInfo) {
-                        listContent += `
-                        <div class="flex items-start gap-3 p-2 rounded-lg ${k.bg} border ${k.border}">
-                            <div class="font-bold ${k.color} text-sm min-w-[20px] pt-0.5">${k.id}.</div>
-                            <div>
-                                <div class="font-semibold text-sm text-slate-800 leading-tight">${winInfo.sekolah}</div>
-                                <div class="text-[10px] uppercase font-bold text-slate-500 mt-1 tracking-wider">${winInfo.daerah}</div>
-                            </div>
-                        </div>`;
-                    } else {
-                        listContent += `
-                        <div class="flex items-center gap-3 p-2">
-                            <div class="font-bold text-slate-300 text-sm w-4">${k.id}.</div>
-                            <div class="text-sm text-slate-400 italic">Menunggu Keputusan</div>
-                        </div>`;
-                    }
+                const grid = document.getElementById(`grid-${categoryMap.id}`);
+
+                comps.forEach(c => {
+                    const cleanName = c.pert.replace(/[^a-zA-Z0-9\s]/g, '').trim();
+                    const safePert = c.pert.replace(/'/g, "\\'");
+                    const safeId = c.id.replace(/'/g, "\\'");
+                    
+                    const card = document.createElement('div');
+                    card.className = "glass-panel rounded-2xl overflow-hidden border border-slate-200 flex flex-col shadow-sm hover:shadow-md transition-all";
+                    
+                    let headerContent = `<div class="bg-slate-50 p-4 border-b border-slate-200 flex justify-between items-center">
+                        <h4 class="font-heading font-bold text-slate-800 leading-tight pr-2">${cleanName}</h4>
+                        ${isAdmin ? `<button onclick="openEditModal('${safeId}', '${safePert}', '${c.cat}')" class="text-xs bg-white border border-tech-200 text-tech-700 px-3 py-1.5 rounded-lg hover:bg-tech-50 hover:border-tech-300 font-semibold transition-colors shadow-sm flex-shrink-0"><i class="fa-solid fa-pen mr-1.5"></i>Edit</button>` : ''}
+                    </div>`;
+
+                    let listContent = '<div class="p-4 flex-grow flex flex-col gap-3">';
+                    const wData = winnersData[c.id] || {};
+                    
+                    const kedudukanConfig = [
+                        { id: 1, label: 'Johan', color: 'text-amber-500', bg: 'bg-amber-50', border: 'border-amber-200' },
+                        { id: 2, label: 'Naib Johan', color: 'text-slate-400', bg: 'bg-slate-50', border: 'border-slate-200' },
+                        { id: 3, label: 'Ketiga', color: 'text-orange-400', bg: 'bg-orange-50', border: 'border-orange-200' },
+                        { id: 4, label: 'Keempat', color: 'text-slate-500', bg: 'bg-transparent', border: 'border-transparent' },
+                        { id: 5, label: 'Kelima', color: 'text-slate-500', bg: 'bg-transparent', border: 'border-transparent' }
+                    ];
+
+                    kedudukanConfig.forEach(k => {
+                        const winInfo = wData[k.id];
+                        if (winInfo && k.id <= 3) {
+                            daerahWinCount[winInfo.daerah] = (daerahWinCount[winInfo.daerah] || 0) + 1;
+                            sekolahWinCount[winInfo.sekolah] = (sekolahWinCount[winInfo.sekolah] || 0) + 1;
+                        }
+
+                        if (winInfo) {
+                            listContent += `
+                            <div class="flex items-start gap-3 p-2 rounded-lg ${k.bg} border ${k.border}">
+                                <div class="font-bold ${k.color} text-sm min-w-[20px] pt-0.5">${k.id}.</div>
+                                <div>
+                                    <div class="font-semibold text-sm text-slate-800 leading-tight">${winInfo.sekolah}</div>
+                                    <div class="text-[10px] uppercase font-bold text-slate-500 mt-1 tracking-wider">${winInfo.daerah}</div>
+                                </div>
+                            </div>`;
+                        } else {
+                            listContent += `
+                            <div class="flex items-center gap-3 p-2">
+                                <div class="font-bold text-slate-300 text-sm w-4">${k.id}.</div>
+                                <div class="text-sm text-slate-400 italic">Menunggu Keputusan</div>
+                            </div>`;
+                        }
+                    });
+
+                    listContent += '</div>';
+                    card.innerHTML = headerContent + listContent;
+                    grid.appendChild(card);
                 });
-
-                listContent += '</div>';
-                card.innerHTML = headerContent + listContent;
-                grid.appendChild(card);
             });
 
             updateWinnerAnalytics(daerahWinCount, sekolahWinCount);
